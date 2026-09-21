@@ -1,0 +1,21 @@
+{
+  "total_rows": 4713483,
+  "anomaly_count": 348460,
+  "anomaly_pct": 7.3928,
+  "dominant_log_level": "INFO",
+  "level_distribution": {
+    "INFO": 3701880,
+    "FATAL": 854658,
+    "ERROR": 112355,
+    "WARNING": 23357,
+    "SEVERE": 19213,
+    "FAILURE": 1714,
+    "Kill": 306
+  },
+  "inter_arrival_median_sec": 0.026496,
+  "inter_arrival_p99_sec": 2.1076822200000156,
+  "time_range": [
+    "2005-06-03 15:42:50.363779",
+    "2006-01-04 08:00:05.233639"
+  ]
+}
