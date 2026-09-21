@@ -9,8 +9,13 @@ __pycache__/
 # Large raw datasets
 /data/raw/BGL.log
 
+# Large generated processed data
+data/processed/semantic_embeddings.npy
+data/processed/temporal_features.parquet
+
 # Logs
 *.log
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
