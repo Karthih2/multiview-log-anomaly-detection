@@ -1,0 +1,21 @@
+{
+  "embedding_control_test": {
+    "ks_stat": 0.0011030860679157595,
+    "p_value": 0.3556069478078414,
+    "group_a_mean": 0.6463919878005981,
+    "group_a_std": 0.293717622756958,
+    "group_b_mean": 0.6470453143119812,
+    "group_b_std": 0.2939355671405792
+  },
+  "embedding_drift_first_flagged_row": 100000,
+  "template_freq_control_test": {
+    "ks_stat": 0.0009508721942302345,
+    "p_value": 0.5445732951591332,
+    "group_a_mean": 1043387.6961353394,
+    "group_a_std": 776885.9023258707,
+    "group_b_mean": 1041949.4399958983,
+    "group_b_std": 777061.7769241915
+  },
+  "template_freq_drift_first_flagged_row": 100000,
+  "limitation_note": "Sequential-window KS comparison is oversensitive on this dataset due to genuine temporal clustering of dominant templates in BGL. Verified via random-shuffle control test showing no real distributional difference within the reference period itself. Mechanism implemented per FR-16; drift flags should be read with this caveat."
+}

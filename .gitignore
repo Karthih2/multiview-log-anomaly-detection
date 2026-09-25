@@ -19,3 +19,6 @@ data/processed/temporal_features.parquet
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+
+data/processed/fusion_weights.npy
+data/processed/severity_bucket.npy

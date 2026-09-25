@@ -22,95 +22,247 @@ Source: Lawrence Livermore National Laboratory, via LogHub.
 Total columns: 10.
 
 ---
+# Adaptive Multi-View Log Anomaly Detection — Technical Build Documentation
 
-## Module 0 — Environment & Skeleton
+**Purpose of this document:** a complete record of what was built across Modules 0–12, and — critically — *why* each technical choice was made: why this algorithm and not another, why this parameter value, why this data format, and why the output looked the way it did. This is the internal engineering log, not a polished report. It exists so that every decision can be defended and re-derived later, not just remembered.
 
-Python venv, `pandas / numpy / scipy / scikit-learn / sentence-transformers / drain3 / hmmlearn / matplotlib / seaborn / jupyter / streamlit / pyarrow / torch` installed. Folder structure: `data/raw`, `data/processed`, `notebooks/`, `src/` (with `features/` subfolder), `reports/figures/`, `dashboard/`. Fixed random seed convention adopted (NFR-1).
+**Dataset:** BGL (BlueGene/L Supercomputer Logs), Lawrence Livermore National Laboratory, via LogHub. 4,713,483 cleaned log lines, ~7-month collection window (2005-06-03 to 2006-01-04), 7.39% ground-truth anomaly rate.
+
+---
+
+## Module 0 — Environment & Project Skeleton
+
+**What was built:** Python venv; `pandas, numpy, scipy, scikit-learn, sentence-transformers, drain3, hmmlearn, matplotlib, seaborn, jupyter, streamlit, pyarrow, torch`. Folder split: `data/raw`, `data/processed`, `notebooks/`, `src/` (with `features/`, `detection/`, `rca/`, `evaluation/` subfolders), `reports/figures/`, `dashboard/`.
+
+**Why this folder split, specifically:** NFR-6 requires exploratory work (EDA, parameter tuning) to live in notebooks while reusable pipeline logic lives in importable `.py` modules. This isn't just tidiness — it's what allows Module 6's detection code to be called from both a one-off notebook check *and* the production `if __name__ == "__main__"` batch run, without duplicating logic. A notebook-only codebase would make every later "wrap this for the web app" step (see the recent pivot to a full-stack system) require a rewrite; a `src/`-first codebase makes that wrapping straightforward.
+
+**Why fix a random seed globally (`RANDOM_SEED = 42`) from the start:** NFR-1 requires reproducibility across runs — KMeans initialization, train/test splitting, Isolation Forest tree construction, and HMM parameter initialization are all stochastic processes. Without a fixed seed, re-running the same code could silently produce different clusters, different flagged anomalies, and non-reproducible evaluation numbers — making it impossible to tell whether a metric change came from a real code fix or just random variation. Baking the seed in from Module 0 avoided a much more painful retrofit later.
+
+---
 
 ## Module 1 — Ingestion & Cleaning (FR-1, FR-2)
 
-`src/ingest.py` — `load_bgl()` splits raw lines on whitespace runs (`split(None, 9)`, not literal `" "` — avoids field misalignment from double-spaces), builds a 10-column dataframe, converts `timestamp` to numeric and `time` to real datetime64.
+**What was built:** `load_bgl()` parses raw whitespace-separated BGL lines into a 10-column DataFrame; `clean()` drops malformed rows and sorts chronologically.
 
-`clean()` — drops rows with missing required fields/empty content, strips whitespace on all text columns, drops 10 known-malformed rows (field misalignment producing junk `level` values: `single`, `microseconds`, `0x00544eb8,` — traced to rare raw lines where stray content pushed the `RAS KERNEL INFO` marker out of position), sorts chronologically.
+**Why `split(None, 9)` and not `split(" ", 9)`:** BGL raw lines occasionally contain **double spaces** within the structured fields (not just inside free-text `content`). `split(" ", 9)` treats every literal space as a separator — a double space produces a phantom empty-string token, silently shifting every subsequent column by one position. This is a corruption bug that doesn't crash, it just quietly misaligns data. `split(None, 9)` collapses any *run* of whitespace into one separator (the same behavior as `.split()` with no arguments), while `maxsplit=9` still caps it so the free-text tail stays intact in one field. This was caught and fixed before it could propagate.
 
-**Why parquet, not CSV:** at 4.7M rows, CSV is slow to read back and bloats file size since it re-stringifies every number/date on save and re-parses on load. Parquet keeps `time` as real datetime64 and `timestamp` as numeric — no re-parsing needed downstream.
+**Why 10 columns, specifically, and why `label` is kept even though it's unused downstream:** BGL's raw format is `label timestamp date node time node_repeat type component level content`. `label` is `-` for the ~93% of rows that are normal, and a real alert-type code otherwise. Per SRS Section 6.1, labels are reserved *exclusively* for evaluation (Module 12) — never for training any detector. Dropping the column at ingestion time would have required re-parsing the entire 4.7M-line raw file later just to recover it for evaluation. Keeping it costs nothing and avoids that.
 
-Output: `data/processed/bgl_cleaned.parquet` — **4,713,483 rows** (4,713,493 raw → 10 dropped).
+**Why `time` (not `timestamp`) is the real ordering key:** `timestamp` is Unix seconds — only second-level precision. `time` is a full timestamp with **microsecond** precision (`2005-06-03-15.42.50.363779`). The six-line burst example used throughout this project (`instruction cache parity error corrected`, repeating every ~150ms) all share the *same* `timestamp` value but differ in `time` — using `timestamp` for chronological sorting would have scrambled burst-level ordering, which later became critical for Drain3's stateful parsing and for every temporal feature in Module 5c.
+
+**Why Parquet, not CSV, for every intermediate artifact in this project:** at 4.7M rows, CSV round-trips are slow and lossy in a specific way — every save re-stringifies numbers and dates, and every load has to re-parse those strings back into typed values. Parquet stores `time` as a real `datetime64` and `timestamp` as numeric natively; no re-parsing cost on every notebook restart. Given this project involved dozens of load/re-load cycles across 13 modules, this was a meaningful, compounding time saving, not a cosmetic choice.
+
+**Why 10 rows were dropped, specifically, and why no broader fix was applied:** a targeted diagnostic (filtering rows where `level` contained junk values like `single`, `microseconds`, `0x00544eb8,`) revealed a small number of raw lines where a stray sentence fragment sat *before* the real `RAS KERNEL INFO` marker, shifting the fixed-position field split. At 10 rows out of 4,713,493 (0.0002%), building special-case parsing logic to *recover* these rows was assessed as not worth the added fragility — the fix applied was a simple filter (`KNOWN_MALFORMED_LEVELS`) to drop them, documented as a limitation rather than silently ignored or over-engineered around.
+
+**Output:** `bgl_cleaned.parquet`, 4,713,483 rows (4,713,493 raw → 10 dropped). This exact number is the row-count baseline every subsequent module's alignment check was measured against.
+
+---
 
 ## Module 2 — EDA Pass 1 / Raw (FR-3)
 
-`notebooks/01_eda_raw.ipynb`. Findings saved to `data/processed/eda_raw_summary.json`:
+**What was built:** class balance, hourly log volume, log-level distribution, inter-arrival time distribution — computed once and saved to `eda_raw_summary.json` rather than only living in notebook output cells.
 
-```json
-{
-  "total_rows": 4713493,
-  "anomaly_count": 348460,
-  "anomaly_pct": 7.3928,
-  "dominant_log_level": "INFO",
-  "level_distribution": {"INFO": 3701880, "FATAL": 854658, "ERROR": 112355, "WARNING": 23357, "SEVERE": 19213, "FAILURE": 1714, "Kill": 306},
-  "inter_arrival_median_sec": 0.026496,
-  "inter_arrival_p99_sec": 2.1076784199999943,
-  "time_range": ["2005-06-03 15:42:50.363779", "2006-01-04 08:00:05.233639"]
-}
-```
+**Why save findings as JSON instead of leaving them in notebook cells:** notebook outputs are easy to lose (re-running a cell overwrites the printed number, a kernel restart clears everything). A separate JSON file is a durable, machine-readable record that later modules (evaluation, reporting) can load directly rather than requiring someone to re-derive the same numbers by re-running an old notebook.
 
-7.39% anomaly rate matches published BGL statistics — confirms ingestion correctness. ~7 month collection window. Bursty inter-arrival pattern (median 26ms) confirmed, matching the 6-sample-line burst.
+**Why 7.39% anomaly rate mattered as a specific sanity check, not just a statistic:** this number is independently well-known from published BGL literature. Getting a result close to it on a from-scratch ingestion pipeline was the first real evidence that the label-splitting logic (`label != "-"`) and the row-count baseline were correct — a wildly different number (e.g., under 1% or over 20%) would have been the first sign of a parsing bug, well before it could contaminate every downstream module.
+
+**Why inter-arrival time distribution specifically, and why it mattered for later design decisions:** the median inter-arrival time (26ms) revealed the dataset is **bursty** — many events fire within milliseconds of each other, not evenly spaced. This single finding directly motivated the inclusion of `burst_rate` and `repeated_event_ratio` as explicit temporal features in Module 5c — a naive "events per minute" frequency feature would have treated a 6-event, 0.8-second burst identically to 6 events spread evenly across an hour, losing exactly the signal that turned out to matter most for the temporal view.
+
+---
 
 ## Module 3 — Log Parsing with Drain3 (FR-4)
 
-`src/parse.py` — stateful, order-sensitive template mining over chronologically sorted `content`. Output: `template_id`, `template`, `params` columns added.
+**What was built:** stateful, order-sensitive template mining over chronologically sorted `content`, using Drain3's default configuration (no custom `sim_th`/`depth` tuning on the first pass).
 
-Result: **1,819 unique templates** discovered — within the expected range for BGL (few hundred to ~2,000), confirming Drain3 neither over-merged nor exploded into near-duplicates.
+**Why Drain3 specifically, and not a simpler regex-based template extractor:** Drain3 builds a parse tree incrementally and merges structurally similar lines into templates using token-position similarity, which generalizes far better than hand-written regexes across 1,819 genuinely distinct event types without manual rule-writing per event type. It's also **stateful** — this matters directly: the same message text seen early in the stream becomes the seed template verbatim, and later similar messages retroactively generalize it (adding `<*>` wildcards) once enough variation is observed. This was directly verified on real output — the first "integer alignment exceptions" message in the dataset was stored template-identical to its raw content; only after two more similar messages arrived did the template generalize to `Kernel detected <*> integer alignment exceptions ...`.
 
-Verified: 6 identical sample lines all mapped to `template_id = 1`. Verified variable-token extraction on register-dump-adjacent lines (`<*>` wildcarding confirmed on repeated "integer alignment exceptions" messages once enough examples were seen — first occurrence of a new cluster is stored verbatim, later occurrences generalize it).
+**Why chronological order is a hard requirement for Drain3, not just a preference:** because the algorithm is stateful and incremental, feeding it out-of-order data would change *which* message becomes each cluster's seed template and *when* generalization triggers — non-deterministic, non-reproducible template assignment. This is why Module 1's chronological sort was a prerequisite, not just good practice.
 
-Output: `data/processed/bgl_parsed.parquet`.
+**Why 1,819 templates was treated as a specific pass/fail signal, not just a number to report:** BGL's typical Drain3 template count in published work sits in the range of a few hundred to ~2,000. Landing at 1,819 was the concrete evidence that `sim_th` (default) was neither too strict (which would explode the count into tens of thousands via failure to merge near-duplicate messages) nor too loose (which would collapse genuinely distinct event types together, producing a suspiciously small count). This number was the single most important check before trusting anything downstream.
+
+---
 
 ## Module 4 — EDA Pass 2 / Parsed (FR-5)
 
-`notebooks/02_eda_parsed.ipynb`. Findings saved to `data/processed/eda_parsed_summary.json`:
+**What was built:** template frequency distribution, singleton-template ratio, template-to-label crosstab.
 
-```json
-{
-  "n_templates": 1819,
-  "singleton_count": 1161,
-  "singleton_ratio": 0.6383,
-  "template_freq_median": 1.0,
-  "template_freq_max": 1706751,
-  "top_template_id": 3
-}
-```
+**Why the 63.83% singleton ratio was investigated directly rather than assumed to be a Drain3 tuning problem:** a singleton-heavy distribution is the textbook symptom of `sim_th` being too strict. Rather than reflexively retuning and re-parsing 4.7M rows (an expensive operation), a targeted sample of the actual singleton templates was pulled and read. They were overwhelmingly **register/floating-point-register dump lines** — content like `r00=0xbf8ae0f0 r01=0x0ffea660...` — where the *values themselves* are effectively random 32-bit hex payloads with no stable token skeleton to generalize on. This is a fundamentally different failure mode from "the threshold is wrong": these lines genuinely don't have a shared structure Drain3 (or any template miner) could extract, because the entropy is real, not an artifact of mis-tuning.
 
-**Investigated the 63.83% singleton ratio directly** rather than assuming it was a tuning problem — spot-check of singleton templates showed they are overwhelmingly **register/floating-point-register dump lines** (e.g. `r00=0xbf8ae0f0 r01=0x0ffea660...`, `fpr5=0x1d510b54...`) with inherently high token-level entropy (hex payloads, varying register indices) that legitimately resist stable template extraction — not a Drain3 misconfiguration.
+**Why the decision was made to *not* retune `sim_th` and re-parse:** lowering `sim_th` to force-merge these high-entropy dumps would have required *also* loosening the threshold globally, which risked collapsing genuinely distinct, meaningful event types elsewhere just to chase merging noise. The cost (re-parsing 4.7M rows, risking new merge errors) outweighed the benefit (a marginally lower singleton count for a category of template that a different view — semantic — was already positioned to handle). This became a foundational justification for the multi-view architecture itself, later validated numerically in Module 12's ablation study.
 
-**Limitation documented (SRS §6.3 style):**
-
-> "~64% of templates are singletons, mostly high-entropy register dumps that resist template merging — expected, and mitigated by the multi-view design."
-
-Decision: no `sim_th` retuning, no re-parse. Structural view's weakness here is compensated by semantic view (SBERT captures "this is a register dump" regardless of exact hex) and temporal view (dump bursts following a fault event are the real signal).
-
-Embedding sanity plot (FR-5's third required plot) deferred to Module 5, since it requires embeddings that didn't exist yet.
+---
 
 ## Module 5 — Multi-View Feature Construction (FR-6, FR-7, FR-8)
 
-**5a — Semantic View** (`src/features/semantic.py`): SBERT `all-MiniLM-L6-v2`, CPU/GPU auto-detect via `torch.cuda.is_available()`. Embeds only unique `template_id`s (deduplication optimization — 1,819 lookups instead of 4.7M encodes), using the *last* (most-evolved) template text per id, since Drain3 generalizes a template's text over time within the same cluster (verbatim → wildcarded as more variety is seen) — grouping by raw text instead of `template_id` was caught as a bug (produced 2,382 "unique" texts vs. the true 1,819 ids) and fixed. Output: `data/processed/semantic_embeddings.npy`, shape `(4713483, 384)`, no NaNs.
+### 5a — Semantic View
 
-*Considered and deferred:* contrastive fine-tuning (SimCSE-style) of the embedding model — flagged as a Module 12-adjacent research/ablation addition, not a core requirement (FR-6 specifies plain off-the-shelf SBERT). Deferred until baseline pipeline is complete, so a clean before/after comparison is possible later.
+**Why SBERT (`all-MiniLM-L6-v2`) specifically, and why embed the *template*, not raw `content`:** SBERT produces dense sentence embeddings where semantic similarity in meaning corresponds to geometric closeness (cosine similarity) in a 384-dimensional space — this is what makes "these two error messages describe a similar kind of problem" a computable, not just intuitive, notion. Embedding raw `content` for the register-dump lines identified in Module 4 would have wasted the model's representational capacity distinguishing between meaningless hex values — two dumps that are semantically "the same kind of event" but numerically different would end up artificially far apart in embedding space. Embedding the *template* (with variable tokens replaced by `<*>`) strips that noise out, so the embedding reflects the event's *kind*, not its incidental values.
 
-*Considered and rejected:* FAISS / vector DB for embedding storage — unnecessary, since Module 6's KMeans-prototype scoring only compares each embedding against ~20–50 cluster centers (a single fast matrix operation), not against millions of other vectors. Plain `.npy` is correct for this batch, offline workload; brute-force numpy similarity remains fast enough even for the one later use case (nearest-normal-example lookup in evidence generation, FR-17) without needing a search index.
+**Why deduplicate by `template_id` before embedding, and why this specific bug mattered:** with 4.7M rows but only 1,819 unique templates, embedding every row individually would mean recomputing the *same* vector for identical text up to hundreds of thousands of times — pure wasted computation, and the actual cause of an initial ~10-minute-plus runtime. The fix embeds only the unique templates (a lookup-table pattern: embed once, broadcast many), reducing the SBERT workload by roughly 2,500x with mathematically identical output.
 
-**5b — Structural View** (`src/features/structural.py`): `template_id`, `param_count` (from `params` list length), `level_rank` (ordinal severity mapping, INFO=0 through FATAL/Kill=5, unmapped=-1 safety net), `component`, `type` (kept as raw categoricals — encoding choice deferred to Module 6), `template_global_freq` (raw rarity signal, distinct from the formal reliability signal built in Module 7). Output: `data/processed/structural_features.parquet`.
+A **real bug was caught here**: the first version deduplicated by template *text*, not `template_id`. Because Drain3 evolves a template's text over time within the same cluster (verbatim → wildcarded, as described in Module 3), the *same* `template_id` could correspond to *different* text strings at different points in the timeline — producing 2,382 "unique" texts against the true 1,819 template IDs. This meant two rows Module 5b's structural view treated as identical (same `template_id`) could receive *different* semantic embeddings — a real cross-view inconsistency. The fix grouped by `template_id`, using the last (most-evolved, most-generalized) text seen for each id, restoring consistency between views.
 
-**5c — Temporal View** (`src/features/temporal.py`): `time_since_prev`, `rolling_freq` (60s rolling window), `burst_rate` (events within 1s of current, capped at window=5), `template_novelty` (first-occurrence flag, causal/no-lookahead), `transition_prob` (empirical bigram P(current|previous), causal/incremental), `rolling_entropy` (Shannon entropy of recent template diversity, window=50), `repeated_event_ratio` (fraction of recent window matching current template, window=10). Output: `data/processed/temporal_features.parquet`.
+**Why `.npy` and not FAISS or a vector database:** Module 6a's actual usage of these embeddings is comparing 4.7M vectors against a **fixed set of ~30 KMeans cluster centers** — a single dense matrix multiplication, computable in seconds with plain NumPy. FAISS and vector databases solve a different problem: fast approximate nearest-neighbor search against *millions* of reference vectors, repeated per query, typically for live retrieval systems. Neither applies here — this is a batch, offline, one-time-computed pipeline (per SRS Section 1.2's explicit scope) comparing against a *tiny* reference set. Adding a vector DB would introduce a running service, network calls per lookup, and index maintenance for zero measurable benefit at this scale. The one place a nearest-neighbor search genuinely occurs (Module 10's "nearest normal example" lookup) still runs fast enough via brute-force NumPy cosine similarity at this data size to not require a dedicated index.
 
-Verified against the 6-sample-line burst: `burst_rate` climbed 1→2→3→4→5 then capped, `template_novelty` fired once then stayed 0, `repeated_event_ratio` stayed 1.0 throughout, `rolling_entropy` correctly near-zero (low diversity), `transition_prob=1.0` throughout (mathematically correct, not a placeholder artifact, since every observed transition in that stretch genuinely repeated).
+### 5b — Structural View
 
-**Final alignment check — all four artifacts confirmed row-aligned:**
+**Why `template_id`, `param_count`, `level_rank`, `component`, `type`, and `template_global_freq` specifically, as the structural feature set:** these map directly to FR-7's specification (template ID, parameter count/types, log level, component/source) and each captures a genuinely different axis of "structural shape" — categorical identity (`template_id`, `component`, `type`), a self-reported severity signal (`level_rank`, ordinally encoded since severity has a natural order: INFO < WARNING < ... < FATAL), and a rarity signal (`template_global_freq`).
 
-```
-bgl_parsed rows:    4,713,483
-semantic emb rows:  4,713,483
-structural rows:    4,713,483
-temporal rows:      4,713,483
-emb has NaNs:       False
-```
+**Why `level_rank = -1` for unmapped values rather than `NaN`:** a `NaN` in a downstream numeric feature can silently propagate and corrupt calculations (e.g., poison a mean, or cause a model to drop the row entirely without warning). `-1` is an explicit out-of-range sentinel — visibly wrong if it shows up unexpectedly, rather than invisibly wrong.
+
+**Why `template_global_freq` was later identified as a genuine data leakage bug, and what the fix was:** the original implementation computed this frequency count over the **entire dataset**, including the held-out test split — meaning the "rarity" feature a supposedly-honest model saw at test time had already "seen" future test-set frequency information baked in. This directly violates the chronological, non-leaking split required by SRS Section 6.2. The fix restricted the frequency count to only the training-period rows (`df["template_id"].iloc[:train_end_idx].value_counts()`), with any template unseen in training correctly receiving a frequency of 0 — reflecting what an honestly-trained model would actually know. This single fix, once cascaded through re-scoring and re-fusion, was the single largest driver of measured AUC-ROC improvement in the whole project (see Module 12).
+
+### 5c — Temporal View
+
+**Why these seven specific features, not a generic frequency count:** `time_since_prev`, `rolling_freq`, `burst_rate`, `template_novelty`, `transition_prob`, `rolling_entropy`, `repeated_event_ratio` — each targets a distinct temporal failure mode a single "events per minute" number would miss. `burst_rate` (events within 1 second, window-capped at 5) exists specifically because Module 2's EDA revealed sub-second bursts as a real, common pattern (verified directly against the canonical 6-line burst example: `burst_rate` climbed 1→2→3→4→5 then capped, exactly tracking the burst's progression). `template_novelty` (first-occurrence flag) and `transition_prob` (empirical bigram probability) are both computed **causally** — using only past data at each point, with zero lookahead — because a real-time or streaming deployment could never see the future, and a feature computed with lookahead would silently overstate detection quality versus what's actually achievable in production. `rolling_entropy` (Shannon entropy of recent template diversity) captures a different concept entirely from raw frequency: low entropy signals "the same thing keeps happening" (verified as correctly dropping toward zero during the repeated-error burst), which is itself informative independent of *how often* it's happening.
+
+---
+
+## Module 6 — Per-View Anomaly Scoring (FR-9, FR-10, FR-11)
+
+### Chronological Train/Val/Test Split (shared prerequisite)
+
+**Why 60/20/20 chronological, and why never random:** SRS Section 6.2 requires this explicitly to prevent **temporal leakage** — a random split would let a detector "train" on data that chronologically comes *after* some of its test data, letting it implicitly learn about future system states it shouldn't have access to at deployment time. A chronological split simulates the real deployment scenario: train on the past, evaluate on the genuinely unseen future.
+
+**Why the training split is *not* filtered to remove the ~7% of real anomalies naturally present in it:** unsupervised anomaly detection (KMeans, Isolation Forest, HMM) is designed to be robust to a *contamination fraction* — a small proportion of outliers mixed into otherwise-normal training data. This is the entire premise of the unsupervised approach; artificially cleaning the training set using labels would be a subtle form of using labels for training, directly violating Section 6.1.
+
+### 6a — Semantic Anomaly Scoring (FR-9)
+
+**Why KMeans (specifically MiniBatchKMeans) rather than measuring raw distance to individual training points:** distance-based anomaly scoring requires *some* reference set to measure distance against. Comparing each of 4.7M rows against millions of individual training embeddings is both computationally wasteful and statistically noisy — any single normal training point is an unreliable, high-variance reference. KMeans compresses "what normal looks like" into a small number (30) of representative prototype centers — each roughly corresponding to a *family* of related normal event types (e.g., "routine kernel INFO messages," "network heartbeat events"). The actual anomaly score is then genuinely simple: `1 − max(cosine_similarity(row, any prototype))` — KMeans's only job is producing a compact, meaningful set of reference points to measure that distance against; it is not itself the anomaly detector.
+
+**Why cosine similarity, specifically, rather than Euclidean distance:** SBERT embeddings encode meaning primarily in their *direction* in the 384-dimensional space, not their magnitude — two semantically similar messages can differ somewhat in vector length while pointing in nearly the same direction. Cosine similarity measures the angle between vectors, which is the standard, recommended similarity metric for sentence embeddings for exactly this reason; Euclidean distance would be sensitive to magnitude differences that don't correspond to real semantic difference.
+
+**Why `n_prototypes=30`:** an explicit starting guess, not a tuned value. With 1,819 distinct templates, 30 clusters means each prototype represents a broad *family* of related template meanings rather than one prototype per template — a deliberate compression, flagged from the outset as the first parameter to revisit if evaluation later showed semantic view underperforming (which it ultimately did — see Module 12).
+
+**Why MiniBatchKMeans, not plain KMeans, in the final version:** the initial plain `KMeans` fit on 2.8M training embeddings took roughly 10 minutes — too slow for a workflow requiring many re-runs. `MiniBatchKMeans` fits on random mini-batches rather than the full dataset each iteration, converging to a comparable clustering result at a small fraction of the computational cost — reducing the fit time to well under a minute with no meaningful quality loss for this use case.
+
+**Why the semantic-view result ultimately mattered (see Module 12):** despite sound theoretical motivation, semantic view's measured AUC-ROC on the held-out test set was 0.306 — *below* the 0.5 random baseline, meaning it actively anti-ranked true anomalies. This was traced to a structural property of the embed-by-template design: every row sharing a `template_id` receives an *identical* embedding, so if a common template (mostly normal) occasionally produces a genuinely anomalous instance (detected via a different view), semantic view is mathematically incapable of distinguishing that anomalous instance from the thousands of normal instances of the same template — they are, by construction, the same point in embedding space. This is a real, explainable limitation of the design choice made in 5a, not a modeling failure.
+
+### 6b — Structural Anomaly Scoring (FR-10)
+
+**Why both Isolation Forest *and* Local Outlier Factor, rather than just one:** Isolation Forest detects **global** outliers — points that are unusual relative to the entire feature space, found efficiently by measuring how few random partitions it takes to isolate a point (anomalies isolate faster). LOF detects **local** outliers — points unusual relative to their *immediate neighborhood*, even if that neighborhood itself sits in a dense region of the overall space. These catch genuinely different anomaly shapes; combining their independently min-max-normalized scores (simple average) captures both global and local structural unusualness rather than picking one lens arbitrarily.
+
+**Why `contamination=0.1`, deliberately set above the measured 7.39% ground-truth rate:** not every real anomaly looks structurally unusual — some are purely semantic or temporal signals invisible to this view — while some structurally rare-but-legitimate patterns exist in normal data (uncommon but valid templates). Setting contamination modestly above the empirical rate gives the detector room for this mismatch rather than forcing it to match ground truth it isn't supposed to have access to; flagged explicitly as a tunable starting value.
+
+**Why LOF required `novelty=True`:** by default, scikit-learn's LOF only supports `fit_predict` on the *same* data it was fit on (an in-sample-only outlier detector). `novelty=True` switches it into a mode that can score genuinely new data (validation/test/full dataset) against a model fit only on training data — a hard requirement given the strict train/test separation this project enforces.
+
+**Why LOF was fit on a 30,000-row random subsample of the 2.8M-row training set, not the full training set:** LOF's cost scales with nearest-neighbor search against every reference point, for every row being scored — fitting *and* scoring against 2.8M reference points made a single run take 20+ minutes with no clear ceiling. A representative random subsample preserves the same local-density structure the algorithm needs, at a small fraction of the computational cost; `n_jobs=-1` was also added to parallelize the neighbor search across available CPU cores. This was a deliberate, documented engineering trade-off — sacrificing a small amount of reference-set completeness for a large, necessary runtime improvement, not a shortcut taken carelessly.
+
+### 6c — Temporal Anomaly Scoring (FR-11)
+
+**Why a Hidden Markov Model, specifically:** an HMM models sequences as transitions between a small number of latent (unobserved) states, learning the probability of moving from one state to the next based on the observed sequence of template IDs. This captures **sequence-level** unlikelihood — not "is this event type rare" (already covered by structural view) but "is this *sequence* of events unlikely given what typically follows what" — a genuinely different signal.
+
+**Why `n_states=10`:** represents an assumption of roughly 10 latent "system behavior regimes" underlying the observed event sequence — an explicit starting guess, not derived from any formal model-selection procedure, flagged for revisiting against evaluation metrics.
+
+**Why the sequence-scoring loop was restructured to use `stride=10` with forward-filling, rather than scoring every single row:** a naive implementation calling `model.score()` on an overlapping window for *every* one of 4.7M rows is enormously redundant — adjacent rows share roughly 19/20 of their window content, so consecutive scores are nearly identical anyway. Scoring only every 10th position and forward-filling the gap rows preserves the same overall signal shape at roughly 1/10th the computational cost — validated on a 50,000-row test slice before committing to the full run, which is standard practice for any operation whose per-row cost is unknown and potentially expensive.
+
+**Why a `NaN`/`inf` guard was added to the log-likelihood calculation:** `model.score()` can legitimately return `−inf` for a sequence the HMM considers effectively impossible under its learned transition structure. Naively computing `−log_likelihood / window_length` on that value produces `+inf`, which then poisons the subsequent min-max normalization (`inf − inf` is undefined, producing `NaN` across the entire score array). The fix checks `np.isfinite()` before updating the running score, holding the previous valid value instead of propagating an infinite value forward — a numerically defensive pattern applicable anywhere log-likelihoods are combined with normalization.
+
+---
+
+## Module 7 — Reliability + Fusion (FR-12, FR-13)
+
+**Why reliability is computed as a signal *separate from* each view's anomaly score, not derived from it:** a view can produce a *low* anomaly score while being highly *confident* in that judgment (e.g., structural view on a template seen 105,924 times — a well-supported, trustworthy "this is normal"), or a high anomaly score with low confidence (a rare pattern the detector has little basis to judge reliably). Conflating these two concepts would prevent the fusion step from correctly identifying which view's opinion deserves more weight *right now*, independent of what that opinion currently says.
+
+**Why each view's reliability formula was chosen specifically:**
+- **Semantic reliability** = mean cosine similarity to the *k*-nearest KMeans prototypes. A point sitting in a dense, well-represented region of embedding space has more supporting evidence behind its judgment than one sitting in a sparse, unfamiliar region.
+- **Structural reliability** = log-scaled, min-max-normalized `template_global_freq`. Log-scaling was necessary because raw counts span many orders of magnitude (singleton templates at 1 occurrence vs. the dominant template at over a million) — without log-scaling, the reliability signal would be almost entirely dominated by the single most common template, flattening everything else toward zero.
+- **Temporal reliability** = inverse of local rolling variance in event frequency. A stable, predictable recent period gives the temporal model a clear pattern to judge against; a volatile, unpredictable period means even a correct-looking sequence-likelihood judgment rests on shakier ground.
+
+**Why softmax specifically for converting reliability into fusion weights:** softmax automatically concentrates weight on whichever view has meaningfully higher reliability for a given row, without requiring hand-picked thresholds or rules — if one view's reliability sits far above the other two, softmax naturally assigns it most of the weight; if all three are similar, it naturally produces a more even split. This adaptivity is the mechanism, not a fixed formula, that lets fusion respond differently row-by-row.
+
+**Why a static "view quality multiplier" was added on top of the dynamic softmax weights, and why this was necessary:** the dynamic reliability signal measures a view's *confidence*, not its *correctness* — and Module 12's evaluation later proved these are not the same thing. Semantic view could be highly "confident" (per its own reliability formula) while being empirically wrong (AUC 0.306, actively anti-correlated with true anomalies). Without a correction, fusion would trust a confidently-wrong view exactly as much as a genuinely well-performing one. The fix applied fixed multipliers (`semantic: 0.2, structural: 1.0, temporal: 0.5`) derived directly from measured AUC-ROC per view, applied *after* softmax and re-normalized to sum to 1 — down-weighting semantic's influence without discarding it outright (it may still help specifically on the *unseen-template* evaluation slice, per FR-24's purpose, where structural's frequency-based signal has no history to draw on). This single change moved fused AUC-ROC from 0.456 (worse than random) to 0.554 — the first of two major evaluation-driven fixes.
+
+---
+
+## Module 8 — Adaptive Threshold + Severity (FR-14, FR-15)
+
+**Why median + scaled MAD (Median Absolute Deviation), rather than mean + standard deviation, for the rolling threshold:** mean and standard deviation are both highly sensitive to outliers — a handful of genuine anomalies inside a rolling window can inflate the mean and standard deviation enough to raise the threshold and mask *further* anomalies in that same window, a self-defeating failure mode. Median and MAD are robust statistics — a small number of extreme values barely moves them — which is exactly the property needed when the window being measured is expected to occasionally *contain* the very anomalies being detected.
+
+**Why the `1.4826` scaling constant:** this is the standard factor that makes MAD comparable to standard deviation *under a normal distribution* — without it, MAD and a `lam` multiplier tuned with std-based intuition in mind would produce a differently-scaled, less interpretable threshold.
+
+**Why `lam` needed retuning after the Module 7 fusion fix, and how the final value was chosen:** the default `lam=3.0` was an initial guess made before the score distribution was corrected. After fixing the fusion weighting (Module 7) and the structural leakage bug (Module 5b), the underlying score distribution shifted meaningfully — the same fixed multiplier no longer landed at an equivalently good operating point. A direct sweep across `lam ∈ {1.0, 1.5, 2.0, 2.5, 3.0, 4.0}`, evaluated by F1 on the held-out test split, showed `lam=1.0` had the nominally highest F1 (0.1117) but at a very high flagged volume (253,001 rows, ~27% of the test set) — impractical for any human-reviewed dashboard. `lam=1.5` was chosen instead: nearly identical F1 (0.1078) at a far more reviewable flagged volume (93,244 rows, ~10%), representing a deliberate trade-off toward operational usability over a marginal, largely volume-driven F1 gain — not a purely mechanical "pick the top number" decision.
+
+**Why severity is a separately-weighted combination of already-adaptive inputs, rather than itself being described as "adaptive":** the *threshold* (Module 8's first function) is adaptive because it's recomputed from a rolling window and therefore moves as the data's baseline shifts. *Severity*, by contrast, combines several already-contextual signals — `final_score`, `persistence` (repeated_event_ratio), `frequency_factor` (rolling_freq), and `rarity` — using **fixed** weights (0.4/0.25/0.2/0.15). This is not a contradiction: the adaptiveness lives in the inputs (which are themselves rolling/contextual), while the *blend* of those inputs is a static, explicitly-flagged starting configuration, consistent with every other parameter in this project (contamination rate, `n_prototypes`, `n_states`) that was set as a reasonable initial value pending evaluation-driven tuning.
+
+**Why the "blast radius" component of severity was implemented as a placeholder (template rarity) rather than the properly-specified version:** genuine blast radius — "how many distinct components/nodes are affected by this incident" — requires incident-level grouping, which didn't exist until Module 11 (RCA). Rather than blocking Module 8 on a module that came three steps later in the pipeline, a reasonable stand-in (template rarity) was used and the gap was explicitly documented as a known limitation to close once real incident data existed — which it since has, though the severity formula has not yet been updated to consume it (a flagged, deliberate follow-up, not an oversight).
+
+**Why real anomalies (label ≠ "-") were verified to reliably receive `severity = NONE` for the canonical low-score burst example, and why that mattered:** this specific check confirmed the threshold correctly distinguishes "a real, recurring pattern" from "something requiring intervention" — a repeated but low-magnitude correctable error shouldn't be escalated just because it's persistent, and the system correctly did not escalate it, validating that severity isn't simply re-deriving the anomaly flag under a different name.
+
+---
+
+## Module 9 — Drift Monitoring (FR-16)
+
+**Why the Kolmogorov-Smirnov (KS) test specifically, for comparing distributions:** KS is a non-parametric test — it makes no assumption about the underlying distribution shape (normal, skewed, multimodal), which matters because neither embedding-centroid-distance nor template-frequency distributions have any reason to be normally distributed. It directly compares empirical cumulative distribution functions between two samples, producing both a test statistic and a p-value indicating whether the two samples plausibly come from the same underlying distribution.
+
+**Why the reference set had to be *subsampled* rather than compared at full size:** KS test statistical power scales with sample size — comparing a small rolling window (50,000 rows) against the *entire* ~2.8M-row training set gives the test enormous power to detect even trivially small, practically meaningless differences as "statistically significant." This produced an immediately implausible result (drift "detected" at row 100,000 — inside the training period itself). Subsampling the reference down to a comparable size to each test window corrects this specific statistical artifact.
+
+**Why a random-shuffle control test was built as a permanent, built-in diagnostic rather than a one-off debugging step:** after the subsampling fix still produced the same implausible early "drift" result, the only way to distinguish "this is a real bug in the code" from "this is a genuine property of the data" was to test the reference period against *itself*, using two different splitting strategies. A **sequential** half/half split of the training period showed `ks_stat` values of 0.5–0.9 (implying massive, implausible internal drift within a period that's supposed to be stable). A **random-shuffle** split of the exact same data showed `ks_stat = 0.0011`, `p = 0.36` — essentially zero difference. This is the conclusive piece of evidence: there is no bug in the distance computation or indexing (a random split would have shown the same failure if there were), and the real explanation is that BGL's dominant templates are **not evenly distributed across time** — they occur in temporally concentrated bursts, so any two *sequential* time chunks naturally look different from each other, independent of any genuine "drift" in the system's behavior. This diagnostic was left permanently embedded in the final `drift.py`, so the limitation is documented in the code itself, not just in a conversation that could be forgotten.
+
+**Why this was documented as a limitation and shipped as-is, rather than re-engineered further:** the underlying mechanism (rolling KS test, reference window, 3-consecutive-window flagging rule) is implemented correctly and matches FR-16's specification exactly. What was discovered is a genuine, evidence-backed empirical property of BGL data that makes *simple sequential-window* comparison an unreliable drift signal for this specific dataset — this is a legitimate, reportable research finding, not a defect to hide. A proper fix (stratified or randomly-sampled reference windows spanning the full training period, rather than one fixed contiguous window) was identified and explicitly deferred as a follow-up refinement rather than being built reactively without first confirming it was actually needed.
+
+---
+
+## Module 10 — Evidence Generation (FR-17, FR-18)
+
+**Why "nearest normal example" is restricted to the *same template_id* where possible, rather than a global nearest-neighbor search:** comparing an anomalous instance of template X against the globally nearest normal point (which could be an unrelated template Y that happens to be geometrically close) would produce a confusing, unhelpful comparison for a human reviewer. Restricting the search to normal instances of the *same* template answers the genuinely useful question — "what does a normal instance of *this specific kind of event* look like" — with a fallback to a global search only if no same-template normal example exists.
+
+**Why `dominant_contributing_view` is computed as `score × weight`, not raw score alone:** a view can have a high raw anomaly score while carrying very little weight in the actual fusion decision (low reliability/quality-adjusted trust) — crediting that view as "why this was flagged" would misrepresent how the system actually reached its decision. Using `score × weight` keeps the evidence package's explanation consistent with the literal arithmetic Module 7's fusion performed, rather than presenting a plausible-sounding but disconnected narrative.
+
+**Why the observed `similarity: 1.0` on every "nearest normal example" lookup was investigated rather than accepted at face value:** a perfect similarity score looked suspicious on first read. Investigation confirmed it is not a bug but a direct, structural consequence of the Module 5a design decision to embed by `template_id` — every row sharing a template has an *identical* embedding by construction, so cosine similarity between any two same-template rows is always exactly 1.0, regardless of which specific parameter values (hex addresses, counts) they contain. This is a genuine, generalizable limitation (not confined to high-entropy register-dump templates, as initially suspected — it applies to *any* shared template) worth documenting explicitly: semantic-similarity-based "nearest normal example" is uninformative whenever the anomaly and its comparison both share a template, which is common.
+
+**Why FR-18 (optional LLM rewrite) was explicitly not implemented at this stage:** NFR-2 requires that the core detection decision never depend on the optional LLM call — disabling it must not change which events are flagged anomalous. Building and fully validating the structured evidence package *first*, as a self-contained, LLM-independent artifact, is what makes that independence verifiable; an LLM rewrite is correctly scoped as a pure presentation-layer addition applied *on top of* already-finalized structured evidence, with zero influence on the underlying detection logic.
+
+---
+
+## Module 11 — Root-Cause Localization (FR-19–22)
+
+**Why incidents are clustered using a chained time-window rule (if A is within the window of B, and B is within the window of C, all three join one incident even if A and C individually exceed the window), rather than fixed-size time buckets:** real incidents don't align to arbitrary clock boundaries — a cascading failure might start at 07:24 and not fully resolve until 09:52, well beyond any single fixed window, but each individual step in that cascade is closely spaced relative to its neighbors. A chained rule captures organically-connected sequences of this shape; fixed-size buckets would arbitrarily split a single real incident across multiple buckets purely based on where a boundary happened to fall.
+
+**Why `time_window="10min"` was flagged immediately as a parameter needing revisiting, using a real example:** the project's own canonical multi-stage incident example (correctable errors → machine check interrupt → service action, spanning roughly 2 hours 28 minutes from first symptom to resolution) is *wider* than the chosen 10-minute window — meaning that specific real incident would likely be split across two or more separate incident clusters under this setting. This was surfaced explicitly as a known, plausible under-fragmentation risk rather than assumed away, precisely because a concrete counter-example was already on hand from earlier evidence-generation work.
+
+**Why co-occurrence is computed as unordered pairwise counts within each incident, rather than a directed/causal graph:** SRS Section 6.3 explicitly requires the system to describe RCA as **correlation-based, not causal graph analysis**, since BGL/HDFS provide no service dependency graph to establish true causal direction. An unordered co-occurrence count answers "which components tend to be involved in the same incidents together" — a legitimate correlational signal — without overclaiming a causal relationship the data cannot support.
+
+**Why root-cause ranking combines four separately-normalized factors (first-occurrence priority, average severity, in-cluster frequency, co-occurrence centrality) rather than relying on any single one:** each factor alone is a weak, gameable signal — a component might occur first purely by coincidence, or have high frequency simply because it's a chatty logger unrelated to the actual fault, or have high centrality just because it's a commonly-involved but not necessarily causal component. Combining all four, each independently min-max-normalized *within* the incident (not globally), was intended to triangulate a more robust candidate than any single heuristic.
+
+**Why the `first_occurrence_priority` formula (`1 / (1 + seconds_since_incident_start)`) was identified as a real design flaw after inspecting actual output, not assumed correct because it ran without error:** direct inspection of a specific incident's full ranking showed the first-occurring component's normalized priority at essentially `1.000` and every other component's at `~0.0002–0.0007` — despite one of those "other" components occurring only 24 minutes later, well within the same incident. The `1/(1+seconds)` formula decays so aggressively that any time gap beyond a few seconds crushes the priority term toward zero almost regardless of how operationally close the events actually were — meaning this single factor was effectively overriding the intended four-factor balance, contrary to the design's stated intent. The fix identified (log-scaling the elapsed time via `log1p` before the reciprocal) compresses the time-gap penalty so that components within the same rough incident timeframe receive meaningfully differentiated scores from the *other* three factors too, rather than the ranking being almost entirely determined by "who logged first." This was documented as a known, understood, fixable issue rather than silently left in place — the top-ranked answer for the inspected incident was still judged plausible even under the flawed formula (since that same component also led on frequency and centrality), but the *score magnitudes* were overstated in separation and would misrepresent confidence if reported uncritically.
+
+---
+
+## Module 12 — Evaluation & Ablation (FR-23, FR-24, FR-25)
+
+**Why this is the only module permitted to read the `label` column, and why that boundary was treated as strict, not just a guideline:** every prior module operated entirely label-blind, by design, per SRS Section 6.1. Evaluation is the sole legitimate use of ground truth — measuring what an honestly-trained, label-blind system achieved. Reading labels anywhere upstream, even accidentally, would invalidate the entire "unsupervised" framing of the project.
+
+**Why AUC-ROC and AUC-PR were treated as the primary metrics, not raw accuracy:** at a 7.39% true anomaly rate, a detector that flags *nothing* achieves ~93% accuracy trivially — accuracy is actively misleading on an imbalanced problem like this. AUC-ROC measures ranking quality across every possible threshold (does the model generally score true anomalies higher than normal rows), independent of any specific operating point; AUC-PR is additionally more informative than AUC-ROC specifically under class imbalance, since it focuses on precision/recall trade-offs rather than being diluted by the large number of easy true negatives.
+
+**Why an initial AUC-ROC of 0.456 (below the 0.5 random baseline) was treated as a stop-everything signal requiring root-cause diagnosis, rather than logged as "modest performance" and tuned incrementally:** a score below 0.5 means the fused score was *systematically* ranking true anomalies *lower* than normal rows on average — worse than a coin flip, which is qualitatively different from "weak signal" (which would sit just above 0.5) and strongly implies an inversion or leakage bug somewhere in the pipeline rather than a parameter that merely needs tuning. Continuing to tune thresholds on top of a possibly-broken fused score would have wasted effort optimizing the wrong thing.
+
+**Why the diagnostic isolated per-view AUC-ROC before touching fusion code:** computing AUC-ROC separately for semantic (0.306), structural (0.547), and temporal (0.428) scores immediately revealed the problem was concentrated in semantic view specifically (anti-correlated, not merely weak) rather than being a general fusion-formula bug — this redirected the investigation toward *why* semantic view specifically was failing (traced, as documented in Module 6a, to the identical-embeddings-per-template structural property) rather than broadly re-architecting fusion without knowing which part was actually broken.
+
+**Why two separate fixes were applied in sequence, and why in that specific order:** the static view-quality multiplier (down-weighting semantic, Module 7) was applied first, since it directly addressed the most severe, immediately diagnosed issue (semantic's anti-correlation actively dragging the fused score below random) — this alone moved AUC-ROC to 0.554. The structural `template_global_freq` leakage fix (Module 5b) was applied second, since it required re-deriving a feature and cascading through re-scoring, re-fusion, and re-thresholding — a larger change appropriately sequenced after the smaller, higher-impact fix was confirmed. This second fix moved AUC-ROC to 0.7237, more than doubling the AUC gain from the leakage correction alone relative to the multiplier fix — direct, measured evidence that the leakage bug, not merely weak individual-view performance, was the dominant remaining issue.
+
+**Why the unseen-template evaluation (FR-24) produced a counter-intuitive result, and why that result was treated as a headline finding rather than an anomaly to explain away:** AUC-ROC was measured at 0.658 on templates never seen during training versus 0.936 on familiar, previously-seen templates — the *opposite* of the naive expectation that novel data should be harder. This is explainable and consistent with everything else discovered: familiar/common templates are populated overwhelmingly by normal instances with only rare anomalous instances mixed in — precisely the population where semantic view's identical-embedding blind spot bites hardest, and where a single global threshold struggles most (reflected in seen-templates' very low precision of 0.029 despite the high AUC). Novel templates, by contrast, are exactly the population structural view's rarity-based signal is naturally strong on. This became one of the strongest, most reportable results in the entire evaluation — direct evidence that the unsupervised, multi-view approach was specifically justified by its behavior on data a supervised or lookup-table approach could never have prepared for.
+
+**Why the ablation study used *equal-weighted* fusion for each configuration rather than reusing the tuned reliability-weighted fusion:** the purpose of ablation is to isolate each view's raw, unbiased contribution — using the same hand-tuned weighting scheme across every ablation configuration would conflate "how good is this view" with "how well did we happen to tune weights around this view," making the comparison unfair. Equal weighting is the standard, neutral baseline for this kind of comparison.
+
+**Why the ablation result (structural-only AUC 0.830, versus naive equal-weighted "full" fusion AUC 0.470) was treated as the single most important finding of the whole evaluation phase, rather than a discouraging result to downplay:** it directly proves, with hard numbers, that combining views *naively* can perform substantially *worse* than the single best individual view — semantic and temporal's below-random individual performance don't cancel out under equal weighting, they actively drag a strong signal down. This result is what retroactively justifies every design decision made in Module 7 (reliability-weighted fusion, the static quality multiplier): the measured gap between naive fusion (0.470) and the actual tuned pipeline (0.7237) is direct, quantified evidence that the more complex reliability-weighting mechanism earned its complexity rather than being unnecessary sophistication. This is also explicitly flagged as an open, honest avenue for further improvement — given structural-only still outperforms the full tuned pipeline, there remains a concrete, identified lever (further reducing temporal's static multiplier) that was deliberately left as a documented next step rather than chased indefinitely before locking in results.
+
+---
+
+## Summary of Every Parameter Explicitly Flagged as a Starting Guess, Pending Further Tuning
+
+| Parameter | Module | Value used | Why flagged, not finalized |
+|---|---|---|---|
+| `n_prototypes` (KMeans) | 6a | 30 | Arbitrary compression level for semantic prototypes; never tuned against evaluation |
+| `contamination` (Isolation Forest / LOF) | 6b | 0.1 | Set above empirical 7.39% rate as a buffer, not derived from data |
+| `n_states` (HMM) | 6c | 10 | Assumed latent-state count, not selected via any formal model-selection procedure |
+| `window`, `stride` (HMM scoring) | 6c | 20, 10 | Chosen for runtime feasibility, not signal-optimality |
+| View quality multipliers | 7 | 0.2 / 1.0 / 0.5 | Derived from one evaluation pass; could be refined further (temporal notably still underperforms) |
+| `lam` (adaptive threshold) | 8 | 1.5 | Chosen via sweep, balancing F1 against practical flagged volume — a judgment call, not a pure optimum |
+| Severity weights | 8 | 0.4/0.25/0.2/0.15 | Static combination of adaptive inputs; blast-radius term still a placeholder |
+| Severity bucket cutoffs | 8 | [0.3, 0.6] | Observed to produce a zero-count HIGH bucket under the final `lam` — needs revisiting |
+| `time_window` (incident clustering) | 11a | 10min | Demonstrably narrower than at least one real, known multi-stage incident |
+| Root-cause ranking weights | 11d | 0.35/0.3/0.2/0.15 | Untested combination; `first_occurrence_priority` formula itself identified as flawed |
+| Root-cause `first_occurrence_priority` formula | 11d | `1/(1+seconds)` | Confirmed via direct output inspection to over-dominate the other three factors; fix identified, not yet applied |
+
+This table exists so that any future tuning pass has a concrete, prioritized starting list rather than requiring re-discovery of which values were ever provisional.

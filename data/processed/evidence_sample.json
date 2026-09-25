@@ -1,0 +1,1202 @@
+[
+  {
+    "row_index": 3716650,
+    "time": "2005-11-03 14:48:21.334800",
+    "component": "KERNEL",
+    "node": "R65-M0-NE-C:J15-U01",
+    "content": "iar 001061dc dear 0244c25c",
+    "template": "iar <*> dear <*>",
+    "final_anomaly_score": 0.5678127282085637,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.5622607469558716,
+        "weight": 0.29268682377179883
+      },
+      "structural": {
+        "score": 0.6616767807998332,
+        "weight": 0.5026260592333696
+      },
+      "temporal": {
+        "score": 0.34526072900148735,
+        "weight": 0.2046871169948315
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 3995355,
+        "time": "2005-11-04 14:13:26.863208",
+        "content": "iar 00106678 dear 025252ec",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-11-03 14:48:21.281439",
+        "content": "iar 00106228 dear 0244c1ec",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 14:48:21.285412",
+        "content": "640764 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-11-03 14:48:21.307040",
+        "content": "640404 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-11-03 14:48:21.311504",
+        "content": "iar 00106228 dear 0244c21c",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 14:48:21.327534",
+        "content": "640764 floating point alignment exceptions",
+        "template_id": 299
+      }
+    ]
+  },
+  {
+    "row_index": 3561348,
+    "time": "2005-10-09 09:52:47.549495",
+    "component": "HARDWARE",
+    "node": "R27-M1",
+    "content": "EndServiceAction is restarting the NodeCards in midplane R27-M1 as part of Service Action 473",
+    "template": "EndServiceAction is restarting the <*> in midplane <*> as part of Service Action <*>",
+    "final_anomaly_score": 0.4678252720170171,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.5989347696304321,
+        "weight": 0.35283760479451015
+      },
+      "structural": {
+        "score": 0.45008541942809843,
+        "weight": 0.3889087130408644
+      },
+      "temporal": {
+        "score": 0.31541242921097795,
+        "weight": 0.2582536821646254
+      }
+    },
+    "dominant_contributing_view": "semantic",
+    "nearest_normal_example": [
+      {
+        "row_index": 836936,
+        "time": "2005-06-17 08:32:22.689953",
+        "content": "EndServiceAction is restarting the NodeCards in midplane R11-M1 as part of Service Action 221",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-10-09 07:24:14.815032",
+        "content": "CE sym 23, at 0x0720b300, mask 0x02",
+        "template_id": 6
+      },
+      {
+        "time": "2005-10-09 07:24:16.111678",
+        "content": "CE sym 24, at 0x14696f80, mask 0x80",
+        "template_id": 6
+      },
+      {
+        "time": "2005-10-09 07:30:57.128738",
+        "content": "machine check interrupt (bit=0x06): L3 major internal error",
+        "template_id": 84
+      },
+      {
+        "time": "2005-10-09 09:41:13.578101",
+        "content": "PrepareForService is being done on this part (mLctn(R27-M1-N8), mCardSernum(203231503833343000000000594c31304b3433343931344a), mLp(FF:F2:9F:16:C0:4A:00:0D:60:E9:3F:B5), mIp(10.2.0.127), mType(4)) by root",
+        "template_id": 287
+      },
+      {
+        "time": "2005-10-09 09:46:00.595339",
+        "content": "PrepareForService shutting down NodeCard(mLctn(R27-M1-N8), mCardSernum(203231503833343000000000594c31304b3433343931344a), mLp(FF:F2:9F:16:C0:4A:00:0D:60:E9:3F:B5), mIp(10.2.0.127), mType(4)) as part of Service Action 473",
+        "template_id": 137
+      }
+    ]
+  },
+  {
+    "row_index": 1171078,
+    "time": "2005-06-30 08:29:43.012217",
+    "component": "KERNEL",
+    "node": "R25-M1-N9-C:J16-U11",
+    "content": "generating core.14648",
+    "template": "generating <*>",
+    "final_anomaly_score": 0.06462983872226978,
+    "severity": "LOW",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 8.344650268554688e-07,
+        "weight": 0.286750545841634
+      },
+      "structural": {
+        "score": 7.8283844510027e-18,
+        "weight": 0.3944136275106059
+      },
+      "temporal": {
+        "score": 0.20270494730307895,
+        "weight": 0.31883582664776017
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2734,
+        "time": "2005-06-03 15:51:25.712950",
+        "content": "generating core.304",
+        "similarity": 0.9999999403953552
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-06-30 08:29:42.842117",
+        "content": "generating core.14680",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-30 08:29:42.876355",
+        "content": "generating core.15705",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-30 08:29:42.910311",
+        "content": "generating core.15706",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-30 08:29:42.944128",
+        "content": "generating core.14681",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-30 08:29:42.978203",
+        "content": "generating core.14682",
+        "template_id": 3
+      }
+    ]
+  },
+  {
+    "row_index": 4580741,
+    "time": "2005-12-04 09:05:34.021711",
+    "component": "APP",
+    "node": "R56-M0-N4-I:J18-U11",
+    "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57739, Link has been severed",
+    "template": "ciod: Error reading message prefix on CioStream socket to <*> <*> <*> <*> <*>",
+    "final_anomaly_score": 0.32648223355471,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.21237820386886597,
+        "weight": 0.32486522755332115
+      },
+      "structural": {
+        "score": 0.4686284786022996,
+        "weight": 0.4441423854491037
+      },
+      "temporal": {
+        "score": 0.21364413906937008,
+        "weight": 0.23099238699757507
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 4181524,
+        "time": "2005-11-17 05:33:24.623263",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:43572, Link has been severed",
+        "similarity": 1.000000238418579
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-12-04 09:05:32.949105",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57750, Link has been severed",
+        "template_id": 1107
+      },
+      {
+        "time": "2005-12-04 09:05:33.125352",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57747, Link has been severed",
+        "template_id": 1107
+      },
+      {
+        "time": "2005-12-04 09:05:33.299140",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57746, Link has been severed",
+        "template_id": 1107
+      },
+      {
+        "time": "2005-12-04 09:05:33.494618",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57741, Link has been severed",
+        "template_id": 1107
+      },
+      {
+        "time": "2005-12-04 09:05:33.768421",
+        "content": "ciod: Error reading message prefix on CioStream socket to 172.16.96.116:57740, Link has been severed",
+        "template_id": 1107
+      }
+    ]
+  },
+  {
+    "row_index": 4090012,
+    "time": "2005-11-08 19:07:36.462803",
+    "component": "KERNEL",
+    "node": "R74-M1-N0-I:J18-U01",
+    "content": "ciod: generated 9 core files for program /g/g90/glosli/src/ddcMD/ddcMD1.1.18a/bin/ddcMDbglV",
+    "template": "ciod: generated <*> core files for program <*>",
+    "final_anomaly_score": 0.3172021046380049,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.3836100101470947,
+        "weight": 0.31404609841155384
+      },
+      "structural": {
+        "score": 0.2572035700563845,
+        "weight": 0.46699571164964077
+      },
+      "temporal": {
+        "score": 0.3499202903704901,
+        "weight": 0.2189581899388055
+      }
+    },
+    "dominant_contributing_view": "semantic",
+    "nearest_normal_example": [
+      {
+        "row_index": 3043364,
+        "time": "2005-08-13 21:25:56.656641",
+        "content": "ciod: generated 64 core files for program /bgl/apps/scaletest/performance/IMB_2.3_243_64K/IMB-MPI1.gp2",
+        "similarity": 0.9999999403953552
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-11-08 19:00:37.619688",
+        "content": "CE sym 21, at 0x10b59900, mask 0x02",
+        "template_id": 6
+      },
+      {
+        "time": "2005-11-08 19:00:37.753332",
+        "content": "CE sym 21, at 0x10b59900, mask 0x02",
+        "template_id": 6
+      },
+      {
+        "time": "2005-11-08 19:00:37.883608",
+        "content": "total of 765 ddr error(s) detected and corrected",
+        "template_id": 7
+      },
+      {
+        "time": "2005-11-08 19:05:05.851774",
+        "content": "job 48696 timed out. Block freed.",
+        "template_id": 290
+      },
+      {
+        "time": "2005-11-08 19:07:36.337878",
+        "content": "ciod: generated 11 core files for program /g/g90/glosli/src/ddcMD/ddcMD1.1.18a/bin/ddcMDbglV",
+        "template_id": 566
+      }
+    ]
+  },
+  {
+    "row_index": 3685726,
+    "time": "2005-11-01 21:56:48.457473",
+    "component": "KERNEL",
+    "node": "R63-M0-N3-C:J02-U11",
+    "content": "instruction cache parity error corrected",
+    "template": "instruction cache parity error corrected",
+    "final_anomaly_score": 0.09860832195605704,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": -2.384185791015625e-07,
+        "weight": 0.27794459385987763
+      },
+      "structural": {
+        "score": 0.16647429048912893,
+        "weight": 0.40946963413563076
+      },
+      "temporal": {
+        "score": 0.09738837826311048,
+        "weight": 0.31258577200449167
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 0,
+        "time": "2005-06-03 15:42:50.363779",
+        "content": "instruction cache parity error corrected",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-11-01 21:47:49.568218",
+        "content": "instruction cache parity error corrected",
+        "template_id": 1
+      },
+      {
+        "time": "2005-11-01 21:48:14.476870",
+        "content": "instruction cache parity error corrected",
+        "template_id": 1
+      },
+      {
+        "time": "2005-11-01 21:49:35.069987",
+        "content": "instruction cache parity error corrected",
+        "template_id": 1
+      },
+      {
+        "time": "2005-11-01 21:56:11.140490",
+        "content": "instruction cache parity error corrected",
+        "template_id": 1
+      },
+      {
+        "time": "2005-11-01 21:56:38.068139",
+        "content": "instruction cache parity error corrected",
+        "template_id": 1
+      }
+    ]
+  },
+  {
+    "row_index": 849505,
+    "time": "2005-06-19 04:39:57.827289",
+    "component": "KERNEL",
+    "node": "R26-M0-NB-C:J07-U01",
+    "content": "6 ddr errors(s) detected and corrected on rank 0, symbol 10, bit 4",
+    "template": "<*> ddr errors(s) detected and corrected on rank 0, symbol <*> bit <*>",
+    "final_anomaly_score": 0.19739251752414413,
+    "severity": "LOW",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.16304808855056763,
+        "weight": 0.33884448850590543
+      },
+      "structural": {
+        "score": 0.2924127029666935,
+        "weight": 0.4436965431777079
+      },
+      "temporal": {
+        "score": 0.05703175162564723,
+        "weight": 0.2174589683163866
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 5027,
+        "time": "2005-06-03 16:19:19.227316",
+        "content": "3 ddr errors(s) detected and corrected on rank 0, symbol 7, bit 0",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-06-19 03:39:26.951798",
+        "content": "generating core.1246",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-19 03:39:26.985178",
+        "content": "generating core.1166",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-19 03:39:27.005302",
+        "content": "generating core.1165",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-19 03:39:27.025092",
+        "content": "generating core.1167",
+        "template_id": 3
+      },
+      {
+        "time": "2005-06-19 04:39:57.805102",
+        "content": "2 L3 EDRAM error(s) (dcr 0x0157) detected and corrected",
+        "template_id": 5
+      }
+    ]
+  },
+  {
+    "row_index": 517043,
+    "time": "2005-06-14 09:58:13.627964",
+    "component": "KERNEL",
+    "node": "R25-M1-N2-C:J06-U01",
+    "content": "exception syndrome register: 0x00800000",
+    "template": "exception syndrome register: 0x00800000",
+    "final_anomaly_score": 0.16565345188310646,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": -4.76837158203125e-07,
+        "weight": 0.35933379758336476
+      },
+      "structural": {
+        "score": 0.13658134364315344,
+        "weight": 0.42241338717164206
+      },
+      "temporal": {
+        "score": 0.4946549491829818,
+        "weight": 0.21825281524499326
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 473519,
+        "time": "2005-06-14 09:38:31.312989",
+        "content": "exception syndrome register: 0x00800000",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-06-14 09:58:12.657875",
+        "content": "exception syndrome register: 0x00800000",
+        "template_id": 193
+      },
+      {
+        "time": "2005-06-14 09:58:12.840490",
+        "content": "exception syndrome register: 0x00800000",
+        "template_id": 193
+      },
+      {
+        "time": "2005-06-14 09:58:13.132077",
+        "content": "exception syndrome register: 0x00800000",
+        "template_id": 193
+      },
+      {
+        "time": "2005-06-14 09:58:13.314311",
+        "content": "exception syndrome register: 0x00800000",
+        "template_id": 193
+      },
+      {
+        "time": "2005-06-14 09:58:13.339717",
+        "content": "exception syndrome register: 0x00800000",
+        "template_id": 193
+      }
+    ]
+  },
+  {
+    "row_index": 3308861,
+    "time": "2005-09-01 04:04:19.276116",
+    "component": "DISCOVERY",
+    "node": "R71-M1-N6",
+    "content": "Node card is not fully functional",
+    "template": "Node card is not fully functional",
+    "final_anomaly_score": 0.4704327027235773,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.5855031609535217,
+        "weight": 0.2880573408352675
+      },
+      "structural": {
+        "score": 0.4574598143270758,
+        "weight": 0.47000196457975757
+      },
+      "temporal": {
+        "score": 0.3586300677010371,
+        "weight": 0.24194069458497477
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 378971,
+        "time": "2005-06-13 09:18:44.098299",
+        "content": "Node card is not fully functional",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-09-01 00:09:36.427217",
+        "content": "Lustre mount FAILED : bglio208 : point /p/gb1",
+        "template_id": 586
+      },
+      {
+        "time": "2005-09-01 03:54:37.739573",
+        "content": "PrepareForService is being done on this part (mLctn(R71-M1-NC), mCardSernum(203231503833343000000000594c31304b3433313030314a), mLp(FF:F2:9F:16:D8:8B:00:0D:60:E9:27:74), mIp(10.7.0.164), mType(4)) by root",
+        "template_id": 287
+      },
+      {
+        "time": "2005-09-01 03:59:03.734301",
+        "content": "PrepareForService shutting down NodeCard(mLctn(R71-M1-NC), mCardSernum(203231503833343000000000594c31304b3433313030314a), mLp(FF:F2:9F:16:D8:8B:00:0D:60:E9:27:74), mIp(10.7.0.164), mType(4)) as part of Service Action 407",
+        "template_id": 137
+      },
+      {
+        "time": "2005-09-01 04:03:23.707040",
+        "content": "EndServiceAction is restarting the NodeCards in midplane R71-M1 as part of Service Action 407",
+        "template_id": 138
+      },
+      {
+        "time": "2005-09-01 04:03:23.765683",
+        "content": "EndServiceAction 407 performed upon R71-M1-NC by root",
+        "template_id": 139
+      }
+    ]
+  },
+  {
+    "row_index": 2609697,
+    "time": "2005-07-23 17:39:19.182039",
+    "component": "KERNEL",
+    "node": "R12-M0-NC-C:J02-U01",
+    "content": "5 floating point alignment exceptions",
+    "template": "<*> floating point alignment exceptions",
+    "final_anomaly_score": 0.18187123229041408,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 2.1457672119140625e-06,
+        "weight": 0.26925337555615975
+      },
+      "structural": {
+        "score": 0.03866627940380386,
+        "weight": 0.3694360836862873
+      },
+      "temporal": {
+        "score": 0.4638279728853572,
+        "weight": 0.36131054075755303
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2453067,
+        "time": "2005-07-20 16:33:25.176394",
+        "content": "8 floating point alignment exceptions",
+        "similarity": 1.000000238418579
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-07-23 17:39:19.088220",
+        "content": "5 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 17:39:19.110486",
+        "content": "5 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 17:39:19.124234",
+        "content": "5 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 17:39:19.146029",
+        "content": "5 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 17:39:19.159725",
+        "content": "5 floating point alignment exceptions",
+        "template_id": 299
+      }
+    ]
+  },
+  {
+    "row_index": 2306451,
+    "time": "2005-07-15 23:48:08.661558",
+    "component": "KERNEL",
+    "node": "R06-M1-NE-C:J07-U01",
+    "content": "generating core.26182",
+    "template": "generating <*>",
+    "final_anomaly_score": 0.07148980908305068,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 8.344650268554688e-07,
+        "weight": 0.3005711872447164
+      },
+      "structural": {
+        "score": 7.8283844510027e-18,
+        "weight": 0.4134233535228572
+      },
+      "temporal": {
+        "score": 0.24995871917539103,
+        "weight": 0.2860054592324265
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2734,
+        "time": "2005-06-03 15:51:25.712950",
+        "content": "generating core.304",
+        "similarity": 0.9999999403953552
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-07-15 23:48:08.507945",
+        "content": "generating core.58948",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-15 23:48:08.541942",
+        "content": "generating core.25156",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-15 23:48:08.567770",
+        "content": "generating core.57924",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-15 23:48:08.601675",
+        "content": "generating core.26181",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-15 23:48:08.627289",
+        "content": "generating core.58949",
+        "template_id": 3
+      }
+    ]
+  },
+  {
+    "row_index": 452725,
+    "time": "2005-06-14 09:18:28.290941",
+    "component": "KERNEL",
+    "node": "R00-M0-NA-C:J17-U01",
+    "content": "instruction address: 0x00004ed8",
+    "template": "instruction address: <*>",
+    "final_anomaly_score": 0.11730104616772437,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 3.5762786865234375e-07,
+        "weight": 0.29135202987277636
+      },
+      "structural": {
+        "score": 0.16259007154012653,
+        "weight": 0.35700283714527237
+      },
+      "temporal": {
+        "score": 0.16851029513234383,
+        "weight": 0.3516451329819514
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 158431,
+        "time": "2005-06-07 05:32:56.889408",
+        "content": "instruction address: 0x0000a064",
+        "similarity": 1.0000001192092896
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-06-14 09:18:28.155777",
+        "content": "instruction address: 0x00004ed8",
+        "template_id": 19
+      },
+      {
+        "time": "2005-06-14 09:18:28.182780",
+        "content": "instruction address: 0x00004ed8",
+        "template_id": 19
+      },
+      {
+        "time": "2005-06-14 09:18:28.209748",
+        "content": "instruction address: 0x00004ed8",
+        "template_id": 19
+      },
+      {
+        "time": "2005-06-14 09:18:28.236910",
+        "content": "instruction address: 0x00004ed8",
+        "template_id": 19
+      },
+      {
+        "time": "2005-06-14 09:18:28.263771",
+        "content": "instruction address: 0x00004ed8",
+        "template_id": 19
+      }
+    ]
+  },
+  {
+    "row_index": 2362071,
+    "time": "2005-07-17 04:20:55.507304",
+    "component": "KERNEL",
+    "node": "R05-M0-N9-C:J03-U11",
+    "content": "generating core.15715",
+    "template": "generating <*>",
+    "final_anomaly_score": 0.0445749701980128,
+    "severity": "LOW",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 8.344650268554688e-07,
+        "weight": 0.28181363609309634
+      },
+      "structural": {
+        "score": 7.8283844510027e-18,
+        "weight": 0.3876231104188316
+      },
+      "temporal": {
+        "score": 0.13484479767197657,
+        "weight": 0.3305632534880721
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2734,
+        "time": "2005-06-03 15:51:25.712950",
+        "content": "generating core.304",
+        "similarity": 0.9999999403953552
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-07-17 04:20:55.351023",
+        "content": "generating core.47427",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:20:55.385463",
+        "content": "generating core.15683",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:20:55.411634",
+        "content": "generating core.48451",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:20:55.446084",
+        "content": "generating core.14691",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:20:55.472398",
+        "content": "generating core.47459",
+        "template_id": 3
+      }
+    ]
+  },
+  {
+    "row_index": 4171369,
+    "time": "2005-11-15 08:09:06.936542",
+    "component": "HARDWARE",
+    "node": "R03-M0-L2",
+    "content": "PrepareForService shutting down LinkCard(mLctn(R03-M0-L2), mCardSernum(203937503438393200000000594c31314b34323739303032), mLp(FF:F2:9F:15:7F:D8:00:0D:60:EA:80:27), mIp(10.0.0.200), mType(1)) as part of Service Action 561",
+    "template": "PrepareForService shutting down <*> <*> <*> <*> <*> as part of Service Action <*>",
+    "final_anomaly_score": 0.4339372584345852,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.582247257232666,
+        "weight": 0.317153331860764
+      },
+      "structural": {
+        "score": 0.4696089580508495,
+        "weight": 0.4276899500139939
+      },
+      "temporal": {
+        "score": 0.18979930999814543,
+        "weight": 0.25515671812524204
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 836930,
+        "time": "2005-06-17 07:25:41.151642",
+        "content": "PrepareForService shutting down NodeCard(mLctn(R11-M1-NB), mCardSernum(203231503833343000000000594c31304b34323831303143), mLp(FF:F2:9F:16:E7:14:00:0D:60:E9:18:EB), mIp(10.1.1.75), mType(4)) as part of Service Action 221",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-11-15 08:07:54.684183",
+        "content": "PrepareForService is being done on this part (mLctn(R63-M0-L2), mCardSernum(203937503438393200000000594c31354b35313535303035), mLp(FF:F2:9F:15:7A:04:00:0D:60:EA:85:FB), mIp(10.6.0.90), mType(1)) by root",
+        "template_id": 287
+      },
+      {
+        "time": "2005-11-15 08:07:55.076263",
+        "content": "PrepareForService is being done on this Midplane (mLctn(R03-M0), mCardSernum( 203937503631353900000000594c31304b34323636303042)) by root",
+        "template_id": 329
+      },
+      {
+        "time": "2005-11-15 08:08:58.604776",
+        "content": "PrepareForService shutting down LinkCard(mLctn(R03-M0-L3), mCardSernum(203937503438383700000000594c31314b34323735303057), mLp(FF:F2:9F:15:7E:1D:00:0D:60:EA:81:E2), mIp(10.0.0.182), mType(1)) as part of Service Action 561",
+        "template_id": 137
+      },
+      {
+        "time": "2005-11-15 08:09:01.433523",
+        "content": "PrepareForService shutting down LinkCard(mLctn(R03-M0-L0), mCardSernum(203937503438393200000000594c31314b34323739303043), mLp(FF:F2:9F:15:7F:DC:00:0D:60:EA:80:23), mIp(10.0.0.187), mType(1)) as part of Service Action 561",
+        "template_id": 137
+      },
+      {
+        "time": "2005-11-15 08:09:04.165995",
+        "content": "PrepareForService shutting down LinkCard(mLctn(R03-M0-L1), mCardSernum(203937503438383700000000594c31314b34323837303059), mLp(FF:F2:9F:15:7E:44:00:0D:60:EA:81:BB), mIp(10.0.0.194), mType(1)) as part of Service Action 561",
+        "template_id": 137
+      }
+    ]
+  },
+  {
+    "row_index": 667679,
+    "time": "2005-06-14 10:56:28.621898",
+    "component": "KERNEL",
+    "node": "R27-M0-NC-C:J04-U01",
+    "content": "disable trace broadcast..................0",
+    "template": "disable trace broadcast..................0",
+    "final_anomaly_score": 0.223787428364066,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.35929399728775024,
+        "weight": 0.3408575950865543
+      },
+      "structural": {
+        "score": 0.1336484070963831,
+        "weight": 0.41294625376638694
+      },
+      "temporal": {
+        "score": 0.18736983203152396,
+        "weight": 0.24619615114705884
+      }
+    },
+    "dominant_contributing_view": "semantic",
+    "nearest_normal_example": [
+      {
+        "row_index": 666972,
+        "time": "2005-06-14 10:56:17.022702",
+        "content": "disable trace broadcast..................0",
+        "similarity": 1.0000001192092896
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-06-14 10:56:28.557285",
+        "content": "program interrupt: fp compare...............0",
+        "template_id": 195
+      },
+      {
+        "time": "2005-06-14 10:56:28.575618",
+        "content": "disable trace broadcast..................0",
+        "template_id": 43
+      },
+      {
+        "time": "2005-06-14 10:56:28.579704",
+        "content": "program interrupt: fp compare...............0",
+        "template_id": 195
+      },
+      {
+        "time": "2005-06-14 10:56:28.598081",
+        "content": "disable trace broadcast..................0",
+        "template_id": 43
+      },
+      {
+        "time": "2005-06-14 10:56:28.602149",
+        "content": "program interrupt: fp compare...............0",
+        "template_id": 195
+      }
+    ]
+  },
+  {
+    "row_index": 3622280,
+    "time": "2005-10-19 08:08:39.959737",
+    "component": "KERNEL",
+    "node": "R17-M1-N4-I:J18-U01",
+    "content": "shutdown complete",
+    "template": "shutdown complete",
+    "final_anomaly_score": 0.379767470050019,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.6688799858093262,
+        "weight": 0.34524785227321253
+      },
+      "structural": {
+        "score": 0.25456409721519213,
+        "weight": 0.3739129653004256
+      },
+      "temporal": {
+        "score": 0.19104625860432511,
+        "weight": 0.28083918242636186
+      }
+    },
+    "dominant_contributing_view": "semantic",
+    "nearest_normal_example": [
+      {
+        "row_index": 4560897,
+        "time": "2005-12-02 01:52:03.472351",
+        "content": "shutdown complete",
+        "similarity": 1.0000003576278687
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-10-19 08:08:39.576105",
+        "content": "shutdown complete",
+        "template_id": 327
+      },
+      {
+        "time": "2005-10-19 08:08:39.667878",
+        "content": "shutdown complete",
+        "template_id": 327
+      },
+      {
+        "time": "2005-10-19 08:08:39.782240",
+        "content": "shutdown complete",
+        "template_id": 327
+      },
+      {
+        "time": "2005-10-19 08:08:39.841651",
+        "content": "shutdown complete",
+        "template_id": 327
+      },
+      {
+        "time": "2005-10-19 08:08:39.901689",
+        "content": "shutdown complete",
+        "template_id": 327
+      }
+    ]
+  },
+  {
+    "row_index": 3791404,
+    "time": "2005-11-03 15:23:30.733832",
+    "component": "KERNEL",
+    "node": "R66-M0-N3-C:J17-U01",
+    "content": "iar 00106568 dear 02494bbc",
+    "template": "iar <*> dear <*>",
+    "final_anomaly_score": 0.5779096446934359,
+    "severity": "CRITICAL",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.5622607469558716,
+        "weight": 0.2921262235371928
+      },
+      "structural": {
+        "score": 0.6616767807998332,
+        "weight": 0.5016633500717674
+      },
+      "temporal": {
+        "score": 0.39629201564378314,
+        "weight": 0.2062104263910397
+      }
+    },
+    "dominant_contributing_view": "structural",
+    "nearest_normal_example": [
+      {
+        "row_index": 3995355,
+        "time": "2005-11-04 14:13:26.863208",
+        "content": "iar 00106678 dear 025252ec",
+        "similarity": 1.0
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-11-03 15:23:30.674000",
+        "content": "iar 00106568 dear 02494bbc",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 15:23:30.686019",
+        "content": "iar 00106568 dear 02494bbc",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 15:23:30.697876",
+        "content": "iar 00106568 dear 02494bbc",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 15:23:30.709952",
+        "content": "iar 00106568 dear 02494bbc",
+        "template_id": 582
+      },
+      {
+        "time": "2005-11-03 15:23:30.721915",
+        "content": "iar 00106568 dear 02494bbc",
+        "template_id": 582
+      }
+    ]
+  },
+  {
+    "row_index": 2324657,
+    "time": "2005-07-17 04:01:59.350222",
+    "component": "KERNEL",
+    "node": "R27-M0-NA-C:J12-U11",
+    "content": "generating core.21053",
+    "template": "generating <*>",
+    "final_anomaly_score": 0.12647338563989807,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 8.344650268554688e-07,
+        "weight": 0.27210950516421245
+      },
+      "structural": {
+        "score": 7.8283844510027e-18,
+        "weight": 0.374275475908616
+      },
+      "temporal": {
+        "score": 0.35765776848997516,
+        "weight": 0.3536150189271717
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2734,
+        "time": "2005-06-03 15:51:25.712950",
+        "content": "generating core.304",
+        "similarity": 0.9999999403953552
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-07-17 04:01:59.197788",
+        "content": "generating core.54844",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:01:59.231616",
+        "content": "generating core.22077",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:01:59.257347",
+        "content": "generating core.54845",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:01:59.291306",
+        "content": "generating core.22078",
+        "template_id": 3
+      },
+      {
+        "time": "2005-07-17 04:01:59.316575",
+        "content": "generating core.54846",
+        "template_id": 3
+      }
+    ]
+  },
+  {
+    "row_index": 3506820,
+    "time": "2005-09-27 12:52:28.054451",
+    "component": "KERNEL",
+    "node": "R51-M0-N8-C:J04-U11",
+    "content": "critical input interrupt (unit=0x0b bit=0x0a): warning for torus z+ wire",
+    "template": "critical input interrupt (unit=0x0b <*> warning for <*> <*> wire",
+    "final_anomaly_score": 0.32281708455070574,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 0.3665253520011902,
+        "weight": 0.35760220134555776
+      },
+      "structural": {
+        "score": 0.2926228734871446,
+        "weight": 0.4154038412730081
+      },
+      "temporal": {
+        "score": 0.3092159233881006,
+        "weight": 0.2269939573814342
+      }
+    },
+    "dominant_contributing_view": "semantic",
+    "nearest_normal_example": [
+      {
+        "row_index": 884443,
+        "time": "2005-06-21 20:53:51.703748",
+        "content": "critical input interrupt (unit=0x0b bit=0x17): warning for tree C1 wire",
+        "similarity": 0.9999998807907104
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-09-27 12:52:20.921588",
+        "content": "suppressing further interrupts of same type",
+        "template_id": 218
+      },
+      {
+        "time": "2005-09-27 12:52:23.213290",
+        "content": "critical input interrupt (unit=0x0b bit=0x17): warning for tree C1 wire",
+        "template_id": 289
+      },
+      {
+        "time": "2005-09-27 12:52:23.360301",
+        "content": "critical input interrupt (unit=0x0b bit=0x17): warning for tree C1 wire",
+        "template_id": 289
+      },
+      {
+        "time": "2005-09-27 12:52:23.623759",
+        "content": "suppressing further interrupts of same type",
+        "template_id": 218
+      },
+      {
+        "time": "2005-09-27 12:52:23.750526",
+        "content": "suppressing further interrupts of same type",
+        "template_id": 218
+      }
+    ]
+  },
+  {
+    "row_index": 2675628,
+    "time": "2005-07-23 18:29:42.944855",
+    "component": "KERNEL",
+    "node": "R12-M1-NB-C:J07-U01",
+    "content": "1005 floating point alignment exceptions",
+    "template": "<*> floating point alignment exceptions",
+    "final_anomaly_score": 0.1533069183837547,
+    "severity": "MEDIUM",
+    "per_view_deviation": {
+      "semantic": {
+        "score": 2.1457672119140625e-06,
+        "weight": 0.2736300104290521
+      },
+      "structural": {
+        "score": 0.03866627940380386,
+        "weight": 0.37544115918005366
+      },
+      "temporal": {
+        "score": 0.3954916394937138,
+        "weight": 0.35092883039089423
+      }
+    },
+    "dominant_contributing_view": "temporal",
+    "nearest_normal_example": [
+      {
+        "row_index": 2453067,
+        "time": "2005-07-20 16:33:25.176394",
+        "content": "8 floating point alignment exceptions",
+        "similarity": 1.000000238418579
+      }
+    ],
+    "preceding_events": [
+      {
+        "time": "2005-07-23 18:29:42.853157",
+        "content": "1005 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 18:29:42.874835",
+        "content": "1005 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 18:29:42.888177",
+        "content": "1005 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 18:29:42.909830",
+        "content": "1005 floating point alignment exceptions",
+        "template_id": 299
+      },
+      {
+        "time": "2005-07-23 18:29:42.923114",
+        "content": "1005 floating point alignment exceptions",
+        "template_id": 299
+      }
+    ]
+  }
+]
