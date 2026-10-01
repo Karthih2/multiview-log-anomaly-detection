@@ -1,0 +1,281 @@
+/* Printed ephemera: ticket, receipt, stamp, barcode, tally. Edges are cut with
+   masks, so the shapes take any background and never need a shadow. */
+
+/* ---------- Ticket: scalloped short edges, a perforated tear with punched notches ---------- */
+
+.ticket {
+  --stub: 11rem;
+  --notch: 0.75rem;
+  --tooth: 0.3rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--stub);
+  background: var(--wine);
+  color: var(--sand);
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 0, #0000 97%, #000),
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 100%, #0000 97%, #000),
+    radial-gradient(circle var(--tooth) at 0 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2),
+    radial-gradient(circle var(--tooth) at 100% 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 0, #0000 97%, #000),
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 100%, #0000 97%, #000),
+    radial-gradient(circle var(--tooth) at 0 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2),
+    radial-gradient(circle var(--tooth) at 100% 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2);
+  mask-composite: intersect;
+}
+
+.ticket--paper {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.ticket__body {
+  padding: var(--space-6) var(--space-6) var(--space-6) calc(var(--space-6) + var(--tooth));
+  min-width: 0;
+}
+
+.ticket__stub {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-6) calc(var(--space-5) + var(--tooth)) var(--space-6) var(--space-5);
+  border-left: 2px dashed currentColor;
+  min-width: 0;
+}
+
+.ticket__frame {
+  border: 1px solid currentColor;
+  padding: var(--space-5);
+  height: 100%;
+}
+
+@media (max-width: 40rem) {
+  .ticket {
+    --stub: 0rem;
+    grid-template-columns: minmax(0, 1fr);
+    -webkit-mask:
+      radial-gradient(circle var(--tooth) at 0 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2),
+      radial-gradient(circle var(--tooth) at 100% 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2);
+    -webkit-mask-composite: source-in;
+    mask:
+      radial-gradient(circle var(--tooth) at 0 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2),
+      radial-gradient(circle var(--tooth) at 100% 50%, #0000 96%, #000) 0 0 / 100% calc(var(--tooth) * 3.2);
+    mask-composite: intersect;
+  }
+  .ticket__body {
+    padding: var(--space-5) calc(var(--space-4) + var(--tooth));
+  }
+  .ticket__stub {
+    border-left: 0;
+    border-top: 2px dashed currentColor;
+    padding: var(--space-4) calc(var(--space-4) + var(--tooth)) var(--space-5);
+  }
+}
+
+/* ---------- Receipt: saw-tooth tear at top and bottom ---------- */
+
+.receipt {
+  --saw: 0.7rem;
+  background: var(--paper);
+  color: var(--ink);
+  padding: calc(var(--space-6) + var(--saw)) var(--space-5);
+  font-family: var(--font-data);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / var(--saw) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--saw) 51% repeat-x;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / var(--saw) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--saw) 51% repeat-x;
+}
+
+.receipt__dash {
+  border: 0;
+  border-top: 1px dashed var(--ink);
+  margin: var(--space-4) 0;
+}
+
+/* ---------- Stamp: scalloped on all four sides ---------- */
+
+.stamp {
+  --scallop: 0.45rem;
+  display: block;
+  padding: calc(var(--scallop) * 2.2);
+  background: var(--paper);
+  -webkit-mask:
+    radial-gradient(50% 50%, #000 68%, #0000 70%) round 0 0 / calc(var(--scallop) * 2) calc(var(--scallop) * 2),
+    linear-gradient(#000 0 0) 50% / calc(100% - var(--scallop) * 2) calc(100% - var(--scallop) * 2) no-repeat;
+  mask:
+    radial-gradient(50% 50%, #000 68%, #0000 70%) round 0 0 / calc(var(--scallop) * 2) calc(var(--scallop) * 2),
+    linear-gradient(#000 0 0) 50% / calc(100% - var(--scallop) * 2) calc(100% - var(--scallop) * 2) no-repeat;
+}
+
+.stamp__face {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: var(--space-4);
+  background: var(--stamp-colour, var(--wine));
+  color: var(--paper);
+  outline: 1px solid var(--paper);
+  outline-offset: -0.4rem;
+}
+
+/* ---------- Ink stamp impression (status mark) ---------- */
+
+.inkmark {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border: 3px double currentColor;
+  color: var(--wine);
+  font-family: var(--font-display);
+  font-stretch: 68%;
+  font-weight: 900;
+  font-size: var(--step-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  transform: rotate(-6deg);
+}
+
+.inkmark small {
+  display: block;
+  margin-top: 0.3em;
+  font-size: 0.45em;
+  font-stretch: 80%;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* ---------- Bracketed label, after the data-graphics reference in assets ---------- */
+
+.bracket {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0.2em 0.85em;
+}
+
+.bracket::before,
+.bracket::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.35em;
+  border: 2px solid currentColor;
+}
+
+.bracket::before {
+  left: 0;
+  border-right: 0;
+}
+
+.bracket::after {
+  right: 0;
+  border-left: 0;
+}
+
+/* ---------- Barcode ---------- */
+
+.barcode {
+  display: block;
+  width: 100%;
+  height: 3rem;
+  color: inherit;
+}
+
+.barcode rect {
+  fill: currentColor;
+}
+
+/* ---------- Tally: label, dotted leader, figure. The ledger form of a KPI. ---------- */
+
+.tally {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tally__row {
+  display: grid;
+  grid-template-columns: auto minmax(1.5rem, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.tally__row dt {
+  font-weight: 500;
+}
+
+.tally__lead {
+  border-bottom: 1px dotted currentColor;
+  opacity: 0.55;
+  transform: translateY(-0.28em);
+}
+
+.tally__row dd {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.tally__note {
+  grid-column: 1 / -1;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  margin-top: calc(var(--space-1) * -1);
+}
+
+.tally--large .tally__row dd {
+  font-size: var(--step-2);
+}
+
+/* ---------- Binary field: rows of instruction digits fading in ---------- */
+
+.binary {
+  font-family: var(--font-data);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  letter-spacing: 0.55em;
+  color: var(--wine);
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  -webkit-mask: linear-gradient(to bottom, #0000 0%, #000 85%);
+  mask: linear-gradient(to bottom, #0000 0%, #000 85%);
+}
+
+.binary span {
+  opacity: var(--o, 0.3);
+}
+
+/* ---------- Tag: a square label for a severity or view ---------- */
+
+.tag {
+  display: inline-flex;
+  /* Stay the width of the label even inside a grid that would stretch it. */
+  width: fit-content;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 700;
+  font-size: var(--step--1);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag__swatch {
+  width: 0.7em;
+  height: 0.7em;
+  background: var(--swatch, currentColor);
+  flex: none;
+}

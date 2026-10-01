@@ -1,24 +1,21 @@
-# Python virtual environments
+# Python
 **/.venv/
 **/venv/
-
-# Python cache
 __pycache__/
 *.pyc
-
-# Large raw datasets
-/data/raw/BGL.log
-
-# Large generated processed data
-data/processed/semantic_embeddings.npy
-data/processed/temporal_features.parquet
-
-# Logs
-*.log
-
-# Jupyter Notebook checkpoints
+.pytest_cache/
 .ipynb_checkpoints/
 
+# Node
+**/node_modules
+frontend/dist
 
-data/processed/fusion_weights.npy
-data/processed/severity_bucket.npy
+# Logs, except the demo files
+*.log
+!data/raw/samples/*.log
+
+# Data and app state
+/data/raw/BGL.log
+data/processed/*
+backend/storage/*
+.env
