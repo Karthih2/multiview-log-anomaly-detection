@@ -1,0 +1,2 @@
+# One environment serves the engine and the backend; see the root file.
+-r ../requirements.txt

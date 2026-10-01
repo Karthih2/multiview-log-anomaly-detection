@@ -1,0 +1,8 @@
+# Uploaded logs and the SQLite database
+storage/
+
+# Local settings
+.env
+
+__pycache__/
+.pytest_cache/

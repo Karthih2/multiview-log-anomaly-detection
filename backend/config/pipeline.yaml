@@ -1,0 +1,72 @@
+# Pipeline parameters.
+#
+# Each section below maps to one function of the experiment code in ../engine.
+# A value of `null` means "inherit the default declared by that function", so
+# the experiment stays the single source of truth and nothing is duplicated
+# here. Set a value to override it for backend runs without touching ../engine.
+# The values actually in effect are served by GET /api/v1/config/pipeline and
+# stored with every run.
+
+split:                    # engine/detection/split.py :: chronological_split
+  train_frac: null
+  val_frac: null
+
+semantic_features:        # engine/features/semantic.py :: build_semantic_features
+  batch_size: null
+
+temporal_features:        # engine/features/temporal.py :: build_temporal_features
+  window: null
+
+semantic_scoring:         # engine/detection/semantic_scoring.py :: fit_semantic_prototypes
+  n_prototypes: null
+
+structural_scoring:       # engine/detection/structural_scoring.py :: fit_structural_detectors
+  lof_sample_size: null
+
+temporal_hmm:             # engine/detection/temporal_scoring.py :: fit_hmm
+  n_states: null
+
+temporal_sequence:        # engine/detection/temporal_scoring.py :: hmm_sequence_score
+  window: null
+  stride: null
+
+temporal_frequency:       # engine/detection/temporal_scoring.py :: rolling_zscore
+  window: null
+
+reliability_semantic:     # engine/detection/reliability.py :: semantic_reliability
+  k: null
+
+reliability_temporal:     # engine/detection/reliability.py :: temporal_reliability
+  window: null
+
+threshold:                # engine/detection/threshold.py :: rolling_mad_threshold
+  window: null
+  lam: null
+
+drift_windows:            # engine/detection/drift.py :: windowed_ks_drift
+  window_size: null
+  step: null
+  p_threshold: null
+  consecutive_required: null
+  reference_sample_size: null
+  random_seed: null
+
+drift_control:            # engine/detection/drift.py :: random_shuffle_control_test
+  random_seed: null
+
+incidents:                # engine/rca/incident_clustering.py :: cluster_incidents
+  time_window: null
+
+# --- Backend-only settings (no counterpart function in ../engine) -------------
+
+evidence:
+  # How many evidence packages to build per run, highest severity first.
+  # null = one for every flagged anomaly (slow on large runs).
+  max_packages: 200
+
+evaluation:
+  # Label-based metrics on the held-out test split. Labels are only ever read
+  # here, never by a detector.
+  enabled: true
+  # Value of the `label` column that marks a normal (non-alert) line.
+  normal_label: "-"

@@ -1,0 +1,470 @@
+/* Landing page. */
+
+.hero {
+  border-bottom: 1px solid var(--rule-strong);
+  overflow: hidden;
+}
+
+.hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--space-8);
+  align-items: center;
+  min-height: calc(100dvh - 4rem);
+  padding-block: var(--space-7);
+}
+
+.hero__copy {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.hero__title {
+  font-size: var(--step-5);
+  color: var(--wine);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.hero__ticket {
+  position: relative;
+  padding-top: var(--space-8);
+}
+
+.hero__ticket .binary {
+  position: absolute;
+  inset: -3rem -8rem auto -2rem;
+  height: 22rem;
+  z-index: 0;
+}
+
+.hero__ticket > :not(.binary) {
+  position: relative;
+}
+
+.hero-ticket {
+  --stub: 11rem;
+}
+
+.hero-ticket .ticket__body {
+  padding-block: var(--space-7);
+}
+
+/* Ticket lettering after design/assets/Ticket Choices.jpg: a spine, ADMITS over the figure,
+   a hairline "to", the underlined title, and a stacked date block. */
+.hero-ticket__body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.hero-ticket__spine {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: center;
+  font-size: var(--step-1);
+  letter-spacing: 0.3em;
+  padding-left: var(--space-3);
+  border-left: 1px solid currentColor;
+}
+
+.hero-ticket__main {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+}
+
+.hero-ticket__admits {
+  font-size: var(--step-3);
+  font-weight: 900;
+}
+
+.hero-ticket__figure {
+  font-size: clamp(2.5rem, 1rem + 3.2vw, 3.75rem);
+  font-stretch: 62%;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.hero-ticket__to {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-2);
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.hero-ticket__to::before,
+.hero-ticket__to::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid currentColor;
+}
+
+.hero-ticket__title {
+  font-size: var(--step-0);
+  font-stretch: 75%;
+  font-weight: 800;
+  /* Room for the underline of one line to clear the caps of the next if it wraps. */
+  line-height: 1.6;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.hero-ticket__date {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding-left: var(--space-5);
+  border-left: 1px solid currentColor;
+  font-size: var(--step-2);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hero-ticket__day {
+  font-size: var(--step-4);
+  font-stretch: 62%;
+  font-weight: 900;
+}
+
+.hero-ticket__until {
+  margin-top: var(--space-3);
+  font-family: var(--font-body);
+  font-stretch: 100%;
+  font-size: var(--step--1);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.hero-ticket__stub .barcode {
+  height: 4rem;
+}
+
+.hero-ticket__serial {
+  margin-top: var(--space-1);
+  font-size: var(--step--1);
+  letter-spacing: 0.25em;
+}
+
+.hero-ticket__auc {
+  display: block;
+  font-size: var(--step-4);
+  font-weight: 900;
+}
+
+.hero-ticket__auc-label {
+  display: block;
+  font-size: var(--step--1);
+  line-height: 1.35;
+  margin-top: var(--space-1);
+}
+
+.hero-ticket__link {
+  font-weight: 700;
+  color: inherit;
+}
+
+.hero-ticket__link:hover {
+  background: var(--sand);
+  color: var(--wine);
+}
+
+/* ---------- Bands ---------- */
+
+.band {
+  padding-block: var(--space-9);
+  border-bottom: 1px solid var(--rule);
+}
+
+.band h2 {
+  font-size: var(--step-4);
+}
+
+.band__head {
+  margin-bottom: var(--space-7);
+}
+
+.band__split {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.band__intro {
+  position: sticky;
+  top: 6rem;
+}
+
+/* ---------- Three views: one row each, a stamp and its explanation ---------- */
+
+.view-rows {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.view-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.view-row:nth-child(2) .view-row__stamp {
+  transform: rotate(2.5deg);
+}
+
+.view-row:nth-child(odd) .view-row__stamp {
+  transform: rotate(-2deg);
+}
+
+.view-row__stamp {
+  aspect-ratio: 4 / 5;
+}
+
+.view-row__weight {
+  display: block;
+  font-size: var(--step-4);
+  font-weight: 900;
+}
+
+.view-row__text {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.view-row__text h3 {
+  font-size: var(--step-2);
+  line-height: 1.2;
+}
+
+/* ---------- Route ---------- */
+
+/* One printed sequence, top to bottom, set like the lines of a receipt. */
+.route__lede {
+  margin-top: var(--space-4);
+}
+
+.route {
+  margin-top: var(--space-7);
+  border-top: 2px solid var(--wine);
+}
+
+.route__leg {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+  border-bottom: 2px dashed var(--rule);
+}
+
+.route__leg h3 {
+  font-size: var(--step-3);
+  color: var(--wine);
+}
+
+.route__leg ol {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.route__leg ol li {
+  display: grid;
+  grid-template-columns: 13rem 3rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.route__lead {
+  border-bottom: 1px dotted var(--ink);
+  opacity: 0.5;
+  transform: translateY(-0.28em);
+}
+
+.band--close .binary {
+  height: 7rem;
+  margin-bottom: calc(var(--space-5) * -1);
+}
+
+/* ---------- Demo ---------- */
+
+.demo {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.demo h3 {
+  font-size: var(--step-1);
+  margin-bottom: var(--space-4);
+}
+
+.demo__incidents ul {
+  display: grid;
+  margin-bottom: var(--space-5);
+  border-top: 1px solid var(--rule-strong);
+}
+
+.demo__incidents li {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.demo__when {
+  color: var(--wine);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+/* ---------- Limits, close ---------- */
+
+.limits {
+  display: grid;
+  gap: var(--space-4);
+  font-size: var(--step-1);
+  line-height: 1.45;
+  max-width: 44rem;
+}
+
+.limits li {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.band--close {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.close-ticket {
+  --stub: 16rem;
+}
+
+.close-ticket .ticket__body {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-7);
+}
+
+.close-ticket .ticket__stub {
+  justify-content: center;
+}
+
+/* ---------- Legal pages ---------- */
+
+.legal {
+  padding-block: var(--space-8);
+  max-width: 46rem;
+}
+
+.legal h1 {
+  font-size: var(--step-5);
+  margin-bottom: var(--space-5);
+}
+
+.legal h2 {
+  font-size: var(--step-2);
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-3);
+}
+
+.legal p + p,
+.legal ul {
+  margin-top: var(--space-3);
+}
+
+.legal ul {
+  list-style: square;
+  padding-left: 1.25rem;
+}
+
+.legal li + li {
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 64rem) {
+  .hero__inner,
+  .band__split,
+  .demo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+  .hero__inner {
+    min-height: 0;
+    padding-block: var(--space-6);
+  }
+  .hero__ticket {
+    padding-top: var(--space-8);
+  }
+  .hero__ticket .binary {
+    inset: 0 0 auto 0;
+    height: 9rem;
+  }
+  .band {
+    padding-block: var(--space-8);
+  }
+  .band__intro {
+    position: static;
+  }
+  .route__leg {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 40rem) {
+  .view-row {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .view-row__weight {
+    font-size: var(--step-3);
+  }
+  .view-row__stamp .stamp__face {
+    padding: var(--space-2);
+  }
+  .route__leg ol li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .route__lead {
+    display: none;
+  }
+  .hero-ticket__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .hero-ticket__spine {
+    display: none;
+  }
+  .hero-ticket__date {
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: var(--space-3) 0 0;
+    border-left: 0;
+    border-top: 1px solid currentColor;
+    font-size: var(--step-1);
+  }
+  .hero-ticket__day {
+    font-size: var(--step-2);
+  }
+  .hero-ticket__until {
+    margin-top: 0;
+  }
+}
