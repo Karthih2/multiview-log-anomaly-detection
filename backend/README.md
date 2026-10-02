@@ -55,8 +55,7 @@ backend/
 
 ## Setup
 
-Uses the project's existing virtual environment, which already has the
-experiment's dependencies. From the project root:
+Uses one environment for the engine and the backend (root `requirements.txt`). From the project root:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
