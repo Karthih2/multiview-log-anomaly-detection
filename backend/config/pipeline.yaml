@@ -13,6 +13,8 @@ split:                    # engine/detection/split.py :: chronological_split
 
 semantic_features:        # engine/features/semantic.py :: build_semantic_features
   batch_size: null
+  per_line: null            # true: embed each line's own text; false: one vector per template
+  max_unique_lines: null    # past this many distinct lines, fall back to per-template vectors
 
 temporal_features:        # engine/features/temporal.py :: build_temporal_features
   window: null

@@ -38,7 +38,7 @@ def run_pipeline(path: Path, cfg: PipelineConfig, on_stage: StageCallback) -> Pi
     detectors = stages.describe_detectors(df, embeddings, train_end_idx, kmeans, iso, lof, hmm_model)
 
     on_stage("fusion")
-    final_scores, weights = stages.fuse(scores, embeddings, kmeans, structural, temporal, cfg)
+    final_scores, weights = stages.fuse(scores, embeddings, kmeans, structural, temporal, cfg, train_end_idx)
 
     on_stage("threshold")
     threshold, is_anomaly, severity_score, severity_bucket = stages.threshold_and_severity(

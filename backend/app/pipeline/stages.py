@@ -106,7 +106,7 @@ def describe_detectors(df: pd.DataFrame, embeddings: np.ndarray, train_end_idx: 
     frequency = section_fn("temporal_frequency")
     return {
         "semantic": {
-            "templates_embedded": int(df["template_id"].nunique()),
+            "distinct_texts_embedded": int(np.unique(embeddings[:, :6], axis=0).shape[0]),
             "embedding_dimensions": int(embeddings.shape[1]),
             "prototype_model": type(kmeans).__name__,
             "prototypes": int(kmeans.n_clusters),
@@ -134,9 +134,9 @@ def describe_detectors(df: pd.DataFrame, embeddings: np.ndarray, train_end_idx: 
 
 
 def fuse(scores: ViewScores, embeddings: np.ndarray, kmeans, structural: pd.DataFrame,
-         temporal: pd.DataFrame, cfg: PipelineConfig) -> tuple[np.ndarray, np.ndarray]:
+         temporal: pd.DataFrame, cfg: PipelineConfig, train_end_idx: int) -> tuple[np.ndarray, np.ndarray]:
     """engine/detection/reliability.py (__main__ wiring): reliability -> softmax
-    weights -> static quality multiplier -> weighted sum. Reuses the prototypes
+    weights -> view quality measured on the learning window -> weighted sum. Reuses the prototypes
     fitted for semantic scoring instead of refitting an identical KMeans."""
     sem_rel = section_fn("reliability_semantic")(
         embeddings, kmeans.cluster_centers_, **cfg.overrides("reliability_semantic"))
@@ -145,9 +145,9 @@ def fuse(scores: ViewScores, embeddings: np.ndarray, kmeans, structural: pd.Data
 
     reliabilities = np.stack([sem_rel, struct_rel, temp_rel], axis=1)
     weights = fn("engine.detection.reliability:softmax_weights")(reliabilities)
-    weights = fn("engine.detection.reliability:apply_quality_multiplier")(weights)
-
     stacked = np.stack([scores.semantic, scores.structural, scores.temporal], axis=1)
+    quality = fn("engine.detection.reliability:view_quality_from_scores")(stacked[:train_end_idx])
+    weights = fn("engine.detection.reliability:apply_quality_multiplier")(weights, quality)
     return fn("engine.detection.reliability:fuse_scores")(stacked, weights), weights
 
 

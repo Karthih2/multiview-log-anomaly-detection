@@ -60,6 +60,7 @@ export function viewCopy(view: string): ViewCopy {
 // Wording for the facts the backend reads off each fitted detector.
 const DETECTOR_FACTS: Record<string, string> = {
   templates_embedded: 'Templates embedded',
+  distinct_texts_embedded: 'Distinct texts embedded',
   embedding_dimensions: 'Embedding dimensions',
   prototype_model: 'Prototype model',
   prototypes: 'Prototypes of normal messages',
