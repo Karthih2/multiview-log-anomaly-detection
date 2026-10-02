@@ -47,6 +47,10 @@
   --space-8: 4.5rem;
   --space-9: 7rem;
 
+  /* Corners: small radius on cards, buttons, inputs, tags and panels; 0 on charts, table cells, bars and dividers. */
+  --radius: 6px;
+  --radius-sm: 4px;
+
   --page: 78rem;
   --gutter: clamp(1rem, 4vw, 2.5rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -61,7 +65,6 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0;
 }
 
 html {
@@ -468,4 +471,31 @@ table {
   html {
     background: #fff;
   }
+}
+
+/* ---------- Corners ----------
+   Everything not listed here stays square: charts, table cells, bars, dividers.
+   Ticket, receipt and stamp keep their cut edges (masks); only the outer corners round. */
+.btn,
+button,
+input,
+select,
+textarea,
+.notice,
+.dropzone,
+.panel,
+.ticket,
+.receipt,
+.stamp,
+.inkmark {
+  border-radius: var(--radius);
+}
+
+.tag,
+.chip {
+  border-radius: var(--radius-sm);
+}
+
+.skeleton {
+  border-radius: var(--radius);
 }

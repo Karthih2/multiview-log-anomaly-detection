@@ -62,13 +62,13 @@ Set by the user for the frontend:
 - Data graphics reference: stacked bars and bracketed labels (`design/assets/download (1).jpg`).
 - Binary digits fading in as a texture (`design/assets/Binary code ... .jpg`).
 - Pipeline progress is shown as a receipt that ticks off each stage as the backend completes it.
-- Square corners everywhere. Minimal dashboard with a novel structure; show only the outputs a user needs.
+- Small corners: 6px radius on cards, buttons, inputs, tags and panels; 4px on small chips; 0 on charts, table cells, bars and dividers. Ticket and stamp shapes keep their notched, perforated edges. Minimal dashboard with a novel structure; show only the outputs a user needs.
 - Motion through React Bits.
 - Must not use: harsh gradients, lucide icons, pure white background, rainbow
   colouring, drop shadows, feature cards in a row, emoji, liquid glass, em dashes,
   Inter / Geist / Space Grotesk, terminal windows, fake testimonials, bento grids,
   neon colours, "it's not x, it's y" copy, checkmark bullets, pricing tiers,
-  rounded corners, purple and black, radial orbs, dot grids, sparkle icons,
+  large or pill-shaped corners, purple and black, radial orbs, dot grids, sparkle icons,
   animated arrows, hover animations, coloured left stripes, basic pastels.
 - Must include: a real product demonstration, skeleton loaders, terms of service, privacy policy.
 
