@@ -4,6 +4,8 @@ import type { DragEvent, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError, uploadLog } from '../api/client'
 import { Barcode } from '../components/Ephemera'
+import GlitchField from '../components/GlitchField'
+import Reveal from '../components/Reveal'
 import { formatBytes } from '../lib/format'
 import '../styles/app.css'
 
@@ -44,8 +46,11 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="page upload-page">
-      <div className="upload-page__intro stack">
+    <div className="upload-wrap">
+      <GlitchField className="upload-wrap__glitch" speed={90} />
+      <div className="page upload-page">
+      <Reveal className="upload-page__intro stack" distance={16}>
+        <p className="caps">New analysis</p>
         <h1 className="display">Hand in a log</h1>
         <p className="lede">
           Upload one raw log file. LogSight stores it, runs the full pipeline, and prints a receipt
@@ -54,10 +59,11 @@ export default function UploadPage() {
         <ul className="plain-list muted">
           <li>Format: raw BGL log lines, one event per line.</li>
           <li>Around a minute for tens of thousands of lines. Larger files take longer.</li>
-          <li>No labels are needed. If the log has them, you also get accuracy figures.</li>
+          <li>No labels are needed.</li>
         </ul>
-      </div>
+      </Reveal>
 
+      <Reveal className="upload-page__ticket" delay={0.1}>
       <form className="ticket ticket--paper upload-ticket" onSubmit={submit}>
         <div className="ticket__body stack">
           <div
@@ -112,6 +118,8 @@ export default function UploadPage() {
           )}
         </div>
       </form>
+      </Reveal>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { severityVar, viewVar } from '../lib/vocabulary'
-import CountUp from '../reactbits/CountUp'
 
 /** Small deterministic generator so the same text always prints the same pattern. */
 function seeded(text: string) {
@@ -39,34 +38,16 @@ export function Barcode({ value, bars = 44 }: { value: string; bars?: number }) 
   )
 }
 
-const FLIP_INTERVAL_MS = 140
-
-/** Rows of 0 and 1 that fade in from the top; a few digits flip while visible. */
+/** Rows of 0 and 1 that fade in from the top and then stay still. */
 export function BinaryField({ seed, rows = 14, columns = 46 }: { seed: string; rows?: number; columns?: number }) {
-  const initial = useMemo(() => {
+  const cells = useMemo(() => {
     const random = seeded(seed)
     return Array.from({ length: rows * columns }, () => ({
       bit: random() > 0.5 ? '1' : '0',
       opacity: 0.12 + Math.floor(random() * 5) * 0.2,
     }))
   }, [seed, rows, columns])
-  const [cells, setCells] = useState(initial)
 
-  useEffect(() => setCells(initial), [initial])
-  useEffect(() => {
-    if (prefersReducedMotion()) return
-    const handle = window.setInterval(() => {
-      setCells((current) => {
-        const next = current.slice()
-        for (let n = 0; n < 6; n += 1) {
-          const i = Math.floor(Math.random() * next.length)
-          next[i] = { ...next[i], bit: next[i].bit === '1' ? '0' : '1' }
-        }
-        return next
-      })
-    }, FLIP_INTERVAL_MS)
-    return () => window.clearInterval(handle)
-  }, [])
 
   return (
     <div className="binary" aria-hidden="true">
@@ -85,10 +66,50 @@ export function BinaryField({ seed, rows = 14, columns = 46 }: { seed: string; r
 
 export const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** A whole number that counts up when it scrolls into view, or just prints if motion is unwanted. */
-export function Count({ to, duration = 1.2 }: { to: number; duration?: number }) {
-  if (prefersReducedMotion()) return <>{to.toLocaleString('en-US')}</>
-  return <CountUp to={to} separator="," duration={duration} />
+const format = (value: number, decimals: number) =>
+  value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+
+/**
+ * A figure that counts up once when it scrolls into view. The run time is fixed, so a
+ * five-digit number and a seven-digit number both land in under a second.
+ */
+export function Count({ to, duration = 0.9, decimals = 0, suffix = '' }: {
+  to: number
+  duration?: number
+  decimals?: number
+  suffix?: string
+}) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const still = prefersReducedMotion()
+  const [value, setValue] = useState(still ? to : 0)
+
+  useEffect(() => {
+    if (still) return
+    const node = ref.current
+    if (!node) return
+    let frame = 0
+    const start = () => {
+      const t0 = performance.now()
+      const step = (now: number) => {
+        const progress = Math.min(1, (now - t0) / (duration * 1000))
+        // Ease out hard: most of the distance is covered early, the last digits settle.
+        setValue(to * (1 - Math.pow(1 - progress, 4)))
+        if (progress < 1) frame = requestAnimationFrame(step)
+      }
+      frame = requestAnimationFrame(step)
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { observer.disconnect(); start() }
+    }, { threshold: 0.3 })
+    observer.observe(node)
+    return () => { observer.disconnect(); cancelAnimationFrame(frame) }
+  }, [to, duration, still])
+
+  return (
+    <span ref={ref} aria-label={`${format(to, decimals)}${suffix}`}>
+      <span aria-hidden="true">{format(decimals ? value : Math.round(value), decimals)}{suffix}</span>
+    </span>
+  )
 }
 
 export interface TallyRow {
@@ -97,9 +118,9 @@ export interface TallyRow {
   note?: string
 }
 
-export function Tally({ rows, large = false }: { rows: TallyRow[]; large?: boolean }) {
+export function Tally({ rows }: { rows: TallyRow[]; large?: boolean }) {
   return (
-    <dl className={large ? 'tally tally--large' : 'tally'}>
+    <dl className="tally">
       {rows.map((row) => (
         <div className="tally__row" key={row.label}>
           <dt>{row.label}</dt>
@@ -112,10 +133,10 @@ export function Tally({ rows, large = false }: { rows: TallyRow[]; large?: boole
   )
 }
 
+/** Severity is always the word as well as the colour. */
 export function SeverityTag({ severity }: { severity: string }) {
   return (
-    <span className="tag bracket">
-      <span className="tag__swatch" style={{ '--swatch': severityVar(severity) } as CSSProperties} />
+    <span className="pill" style={{ '--swatch': severityVar(severity) } as CSSProperties}>
       {severity.toLowerCase()}
     </span>
   )
@@ -123,7 +144,7 @@ export function SeverityTag({ severity }: { severity: string }) {
 
 export function ViewTag({ view, children }: { view: string; children?: ReactNode }) {
   return (
-    <span className="tag bracket">
+    <span className="tag">
       <span className="tag__swatch" style={{ '--swatch': viewVar(view) } as CSSProperties} />
       {children ?? view}
     </span>

@@ -60,6 +60,15 @@ class TimelinePoint(BaseModel):
     count: int
 
 
+class ScoreBucket(BaseModel):
+    """One slice of the log in time order: its worst fused score and how many lines were flagged."""
+    row_start: int
+    time: datetime
+    max_score: float
+    mean_threshold: float | None
+    n_anomalies: int
+
+
 class ComponentRisk(BaseModel):
     component: str | None
     anomaly_count: int

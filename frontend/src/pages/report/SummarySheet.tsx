@@ -1,9 +1,9 @@
 import { useApi } from '../../api/hooks'
 import type { ComponentRisk, Incident, Page, RootCauseCount } from '../../api/types'
-import { Barcode, Tally } from '../../components/Ephemera'
+import { Tally } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonRows } from '../../components/States'
-import { formatInt, formatLogDate, formatLogTime, formatPercent, formatScore, logSpan, serial } from '../../lib/format'
-import { bySeverity, metricCopy, viewCopy } from '../../lib/vocabulary'
+import { formatInt, formatLogDate, formatLogTime, formatPercent, logSpan, serial } from '../../lib/format'
+import { bySeverity, viewCopy } from '../../lib/vocabulary'
 import { useReport } from './ReportLayout'
 
 const TOP_INCIDENTS = 5
@@ -20,7 +20,7 @@ function download(filename: string, data: unknown) {
 
 /** One page that states the findings, sized to print. */
 export default function SummarySheet() {
-  const { run, summary, evaluation } = useReport()
+  const { run, summary } = useReport()
   const incidents = useApi<Page<Incident>>(`/runs/${run.id}/incidents?limit=${TOP_INCIDENTS}`)
   const components = useApi<ComponentRisk[]>(`/runs/${run.id}/components`)
   const rootCauses = useApi<RootCauseCount[]>(`/runs/${run.id}/root-causes`)
@@ -29,7 +29,6 @@ export default function SummarySheet() {
   const views = run.view_summary ?? {}
   const leadView = Object.keys(views).sort((a, b) => views[b].dominant_flags - views[a].dominant_flags)[0]
   const topOrigin = rootCauses.data?.[0]
-  const auc = summary.test_metrics?.auc_roc
 
   return (
     <article className="sheet summary">
@@ -40,10 +39,9 @@ export default function SummarySheet() {
         </div>
         <div className="summary__serial">
           {run.finished_at && (
-            <p className="inkmark">Processed<small>{formatLogDate(run.finished_at)}</small></p>
+            <p className="muted">Processed {formatLogDate(run.finished_at)}</p>
           )}
           <span className="data">Run No. {serial(run.id)}</span>
-          <Barcode value={`run-${run.id}-${run.created_at}`} bars={30} />
         </div>
       </header>
 
@@ -51,7 +49,7 @@ export default function SummarySheet() {
         <button type="button" className="btn" onClick={() => window.print()}>Print or save as PDF</button>
         <button type="button" className="btn btn--ghost" disabled={loading || !!error}
           onClick={() => download(`logsight-run-${run.id}.json`, {
-            run, summary, evaluation, components: components.data, root_causes: rootCauses.data,
+            run, summary, components: components.data, root_causes: rootCauses.data,
             largest_incidents: incidents.data?.items,
           })}>
           Download as JSON
@@ -80,9 +78,6 @@ export default function SummarySheet() {
               The {viewCopy(leadView).name.toLowerCase()} view contributed most to{' '}
               {formatPercent(summary.n_anomalies ? views[leadView].dominant_flags / summary.n_anomalies : null)} of flags.
             </li>
-          )}
-          {auc != null && (
-            <li>Against the log's own labels, ranking quality ({metricCopy('auc_roc').label}) is {formatScore(auc)}.</li>
           )}
         </ul>
       </section>

@@ -5,8 +5,8 @@ import { NotFoundPage, PrivacyPage, TermsPage } from './pages/LegalPages'
 import ReceiptPage from './pages/ReceiptPage'
 import RunsPage from './pages/RunsPage'
 import UploadPage from './pages/UploadPage'
-import AccuracySheet from './pages/report/AccuracySheet'
-import ChecksSheet from './pages/report/ChecksSheet'
+import TemplatesSheet from './pages/report/TemplatesSheet'
+import WhenWhereSheet from './pages/report/WhenWhereSheet'
 import EventsSheet from './pages/report/EventsSheet'
 import IncidentsSheet from './pages/report/IncidentsSheet'
 import OverviewSheet from './pages/report/OverviewSheet'
@@ -28,8 +28,8 @@ export default function App() {
             <Route path="views" element={<ViewsSheet />} />
             <Route path="incidents" element={<IncidentsSheet />} />
             <Route path="events" element={<EventsSheet />} />
-            <Route path="checks" element={<ChecksSheet />} />
-            <Route path="accuracy" element={<AccuracySheet />} />
+            <Route path="when" element={<WhenWhereSheet />} />
+            <Route path="templates" element={<TemplatesSheet />} />
             <Route path="summary" element={<SummarySheet />} />
           </Route>
           <Route path="terms" element={<TermsPage />} />

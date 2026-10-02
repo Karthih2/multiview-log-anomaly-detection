@@ -66,6 +66,8 @@ typography:
     fontFeature: "'tnum'"
 rounded:
   none: "0"
+  sm: "4px"
+  md: "6px"
 spacing:
   "1": "0.25rem"
   "2": "0.5rem"
@@ -151,6 +153,23 @@ components:
     typography: "{typography.label}"
 ---
 
+## Direction update, 2 Oct 2026 (supersedes the older brand rules below where they differ)
+
+Back to the printed ticket, stamp and receipt look, with a new palette and a conventional dashboard inside it.
+
+- **Palette, by importance:** Primal Crimson `#940501` (actions, key figures, severity), Cloudlight Periwinkle `#95BBEA` (secondary, chart areas, info), Latte Silk `#FFF8E6` (the ground). Tints and shades of these only. Ink is a warm dark brown `#2A1514`, never black. No dark theme.
+- **Background:** the latte ground with a soft periwinkle-to-crimson wash that drifts slowly. No orbs, no dot grids.
+- **Views:** periwinkle blue `#2A5DBA`, green `#0E8A6A`, ochre `#B7791A` (validated together, all pairs). Always named beside the colour.
+- **Severity:** a crimson ramp from light rose to deep crimson, always with its word.
+- **Shapes:** ticket (hero, upload), receipt (live progress), stamps (three views), ink stamp, barcode. Small radius: 6px, 4px on chips, 0 on charts and table cells.
+- **Type:** Archivo in capitals for titles, IBM Plex Sans for text, IBM Plex Mono for figures and log lines.
+- **Dashboard:** five numbered groups (Overview, When and where, Incidents, The three views, Every flagged line), each with a one-line purpose.
+- **Motion:** React Bits (SplitText, AnimatedContent, DecryptedText, LetterGlitch in binary digits). Plays once on scroll-in except the ambient background and the progress meter. All off under `prefers-reduced-motion`. No custom cursor. Hover changes are instant.
+- **Never:** harsh gradients, lucide icons, pure white, rainbow colouring, drop shadows, feature cards in a row, emoji, liquid glass, em dashes, Inter/Geist/Space Grotesk, terminal windows, fake testimonials, bento grids, "it's not x, it's y" copy, checkmark bullets, pricing tiers, soft or pill corners, purple and black, radial orbs, dot grids, sparkle icons, animated arrows, coloured left stripes, basic pastels.
+- **Must have:** a real product demo, skeleton loaders, Terms of service, Privacy policy.
+
+---
+
 # Design System: LogSight
 
 ## Overview
@@ -159,13 +178,13 @@ components:
 
 A log run is a ticket. A file is handed in, the machine prints a receipt line by line as each pipeline stage completes, and what comes back is a stamped report sheet. Everything on screen is a piece of printed ephemera on a sand counter: admission tickets with punched notches and a perforated stub, receipts with a saw-tooth tear, postage stamps with scalloped edges, barcodes generated from the run id, and an ink stamp pressed onto finished work.
 
-The system is flat, square and printed. One heavy colour (Wine Red) sits on one pinned ground (Light Sand); structure comes from hairline rules, dashed perforations and edges cut with CSS masks. There is no shadow, no radius and no dark theme: the user pinned the Light Sand ground, so the build ships a single light scheme. The system refuses the SaaS dashboard of rounded metric cards and the dark "hacker" console; figures are set as ledger tallies with dotted leaders, and one message is given per band.
+The system is flat and printed, with small corners. One heavy colour (Wine Red) sits on one pinned ground (Light Sand); structure comes from hairline rules, dashed perforations and edges cut with CSS masks. There is no shadow, no large radius and no dark theme: the user pinned the Light Sand ground, so the build ships a single light scheme. The system refuses the SaaS dashboard of rounded metric cards and the dark "hacker" console; figures are set as ledger tallies with dotted leaders, and one message is given per band.
 
 Every figure on screen comes from the live API. The frontend holds only the human wording for backend identifiers (`frontend/src/lib/vocabulary.ts`); numbers, stage order and identifiers are never hard-coded.
 
 **Key Characteristics:**
 - Light Sand ground, Wine Red as the one heavy colour, wine-tinted ink for text.
-- Square corners everywhere, enforced by a global zero radius.
+- Small radius: 6px on cards, buttons, inputs, tags and panels; 4px on small chips; 0 on charts, table cells, bars and dividers. Set once as `--radius` and `--radius-sm` in `base.css`.
 - No shadows; shapes are cut with masks so they sit on any ground.
 - Heavy condensed caps for ticket lettering, a plain grotesque for reading, a mono only for log lines and figures.
 - Hover and focus states change instantly; motion is reserved for printing, stamping and first reveal.
@@ -247,7 +266,7 @@ Flat. No `box-shadow` is used anywhere in the build, and none is needed: tickets
 
 ## Shapes
 
-Corners are square everywhere: a global `border-radius: 0` applies to every element and pseudo-element. Curvature exists only as punched or torn paper, produced by masks:
+Corners use `--radius` (6px) on cards, buttons, inputs, tags and panels, `--radius-sm` (4px) on small chips, and 0 on charts, table cells, bars and dividers. Tickets, receipts and stamps keep their notched, torn or perforated edges, produced by masks; only their outer corners take `--radius`:
 
 - **Ticket:** scalloped short edges (0.3rem teeth), two 0.75rem punched notches where the stub meets the body, and a 2px dashed perforation between them. An inner 1px frame in the current colour is available.
 - **Receipt:** a 0.7rem saw-tooth tear along the top and bottom edges.
@@ -262,8 +281,8 @@ Lines come in four kinds: 1px solid ink (structure), 1px hairline (rows), 2px da
 ## Components
 
 ### Buttons
-Flat printed blocks: square, uppercase, heavy.
-- **Shape:** square (radius 0), 2px wine border, minimum height 3rem, 1.5rem side padding, label type at 1rem with 0.05em tracking.
+Flat printed blocks: small radius, uppercase, heavy.
+- **Shape:** radius 6px, 2px wine border, minimum height 3rem, 1.5rem side padding, label type at 1rem with 0.05em tracking.
 - **Primary:** wine ground, sand text.
 - **Ghost:** transparent ground, wine text and border.
 - **Small:** 2.25rem high, 0.75rem padding, 0.8125rem text; used in the masthead and inside notices.
@@ -272,7 +291,7 @@ Flat printed blocks: square, uppercase, heavy.
 - **Text link:** wine, weight 600, 1px underline offset 0.2em; hover turns it ink.
 
 ### Tags
-- **Style:** a small filled square swatch followed by the word in label type. No ground, no border, no pill.
+- **Style:** a small filled square swatch followed by the word in label type. No ground, no border, no pill. Chips take the 4px radius.
 - **Use:** severity and view names in tables, legends, tooltips. In a legend the tag sits inside a bracketed label with its count in mono.
 - **Filter chip:** an active filter is a 3rem-high box with a 1px wine border holding the filter text and a text link to clear it.
 
@@ -316,7 +335,7 @@ Every fetched region has a skeleton shaped like the content it replaces, an empt
 
 ### Do:
 - **Do** keep the ground Light Sand and use Paper for any sheet laid on it.
-- **Do** keep every corner square; the global zero radius is not to be overridden.
+- **Do** take every corner from `--radius` (6px) or `--radius-sm` (4px); keep charts, table cells, bars and dividers at 0.
 - **Do** separate surfaces with a cut edge, a 1px rule, a dashed perforation or a tone change.
 - **Do** pair every view and severity colour with its word, and offer chart data as a table.
 - **Do** set figures as tallies or mono table cells with a note saying what the number measures.
@@ -328,12 +347,12 @@ Every fetched region has a skeleton shaped like the content it replaces, an empt
 
 ### Don't:
 - **Don't** add `box-shadow`, blur, glow or any drop shadow.
-- **Don't** round corners or use pills.
+- **Don't** go past 6px radius or use pills.
 - **Don't** add a dark theme or a pure white screen surface.
 - **Don't** animate on hover: no transitions, lifts, scale or moving arrows.
 - **Don't** introduce a colour beyond wine, the sand and ink neutrals, the three view inks and the severity ramp.
 - **Don't** use visible colour gradients as decoration, radial orbs, dot grids or glass effects. (Masks and the skeleton sweep are the only gradients in the build.)
-- **Don't** lay out metrics as rounded cards, feature cards in a row or a bento grid; use rows, tallies and ruled sections.
+- **Don't** lay out feature cards in a row or a bento grid. KPI tiles are allowed: a sand panel, 6px radius, wine figure, one per fact.
 - **Don't** encode severity or view by colour alone.
 - **Don't** set mono type for prose or headings, and do not use Inter, Geist or Space Grotesk.
 - **Don't** use a terminal-window motif, emoji, sparkle icons or em dashes.

@@ -2,8 +2,9 @@ import type { CSSProperties } from 'react'
 import { ShareBar } from '../../components/charts'
 import { Tally } from '../../components/Ephemera'
 import type { TallyRow } from '../../components/Ephemera'
+import Reveal from '../../components/Reveal'
 import { EmptyNotice } from '../../components/States'
-import { formatInt, formatPercent, formatScore } from '../../lib/format'
+import { formatInt, formatPercent } from '../../lib/format'
 import { detectorFactLabel, viewCopy, viewVar } from '../../lib/vocabulary'
 import { useReport } from './ReportLayout'
 
@@ -14,7 +15,7 @@ function setting(parameters: Record<string, Record<string, unknown>> | null, sec
 }
 
 export default function ViewsSheet() {
-  const { run, summary, evaluation } = useReport()
+  const { run, summary } = useReport()
   const views = run.view_summary
 
   if (!views) {
@@ -27,11 +28,8 @@ export default function ViewsSheet() {
   }
 
   const names = Object.keys(views)
-  const aucAlone = (view: string) =>
-    evaluation.find((e) => e.scope === `ablation:${view}_only`)?.metrics.auc_roc ?? null
-
   const settings: TallyRow[] = [
-    ['Training share of the log', setting(run.parameters, 'split', 'train_frac')],
+    ['Learning window share of the log', setting(run.parameters, 'split', 'train_frac')],
     ['Normal-message clusters (semantic)', setting(run.parameters, 'semantic_scoring', 'n_prototypes')],
     ['Hidden states (temporal)', setting(run.parameters, 'temporal_hmm', 'n_states')],
     ['Threshold window, in lines', setting(run.parameters, 'threshold', 'window')],
@@ -40,66 +38,65 @@ export default function ViewsSheet() {
   ].filter((row): row is [string, string] => row[1] !== null).map(([label, value]) => ({ label, value }))
 
   return (
-    <article className="sheet">
-      <header className="sheet__head">
+    <article className="sheet dash">
+      <header className="dash__head">
         <h1 className="display">Three views</h1>
-        <p className="lede">
-          Every line is scored three separate ways. The scores are then blended, and each view's say
-          depends on how reliable it is for that particular line.
+        <p className="muted">
+          Every line is scored three ways, then blended. Each view's say depends on how reliable it is for that line.
         </p>
       </header>
 
-      <section className="sheet__section">
-        <h2>Average say in the final score</h2>
-        <p className="muted">Mean fusion weight across all {formatInt(summary.total_rows)} lines. The three always add up to 100%.</p>
-        <ShareBar parts={names.map((view) => ({
-          key: view, label: viewCopy(view).name, share: views[view].mean_weight ?? 0, colour: viewVar(view),
-        }))} />
-      </section>
+      <Reveal>
+        <section className="dash__section">
+          <h2>Average say in the final score</h2>
+          <ShareBar parts={names.map((view) => ({
+            key: view, label: viewCopy(view).name, share: views[view].mean_weight ?? 0, colour: viewVar(view),
+          }))} />
+        </section>
+      </Reveal>
 
-      {names.map((view) => {
-        const copy = viewCopy(view)
-        const stats = views[view]
-        const auc = aucAlone(view)
-        const fitted = run.detectors?.[view]
-        const rows: TallyRow[] = [
-          { label: 'Average score, all lines', value: formatScore(stats.mean_score), note: '0 is ordinary, 1 is as unusual as it gets.' },
-          { label: 'Average score, flagged lines', value: formatScore(stats.mean_score_flagged) },
-          { label: 'Average weight on flagged lines', value: formatPercent(stats.mean_weight_flagged) },
-          { label: 'Flags it contributed most to', value: formatInt(stats.dominant_flags),
-            note: `${formatPercent(summary.n_anomalies ? stats.dominant_flags / summary.n_anomalies : null)} of all flags. Contribution is score times weight.` },
-        ]
-        if (auc != null) {
-          rows.push({ label: 'AUC-ROC on its own', value: formatScore(auc), note: 'Ranking quality if this view were the only one. 0.5 is chance.' })
-        }
-        return (
-          <section key={view} className="sheet__section view-block" style={{ '--view': viewVar(view) } as CSSProperties}>
-            <div className="view-block__intro">
-              <h2 className="bracket view-block__title"><span className="view-block__swatch" aria-hidden="true" />{copy.name} view</h2>
-              <p className="view-block__reads">{copy.reads}.</p>
-              <p className="muted">{copy.catches}</p>
-              {!fitted && <p className="muted view-block__detector">Detector: {copy.detector}.</p>}
-            </div>
-            <Tally rows={rows} />
-            {fitted && (
-              <div className="view-block__fitted">
-                <h3>Its detector, as fitted on this log</h3>
-                <Tally rows={Object.entries(fitted).map(([key, value]) => ({
-                  label: detectorFactLabel(key),
-                  value: typeof value === 'number' ? formatInt(value) : String(value),
-                }))} />
-              </div>
-            )}
-          </section>
-        )
-      })}
+      <div className="view-panels">
+        {names.map((view, index) => {
+          const copy = viewCopy(view)
+          const stats = views[view]
+          const fitted = run.detectors?.[view]
+          return (
+            <Reveal key={view} delay={index * 0.1}>
+              <section className="panel view-panel" style={{ '--view': viewVar(view) } as CSSProperties}>
+                <h2 className="bracket view-block__title">
+                  <span className="view-block__swatch" aria-hidden="true" />{copy.name}
+                </h2>
+                <p className="view-panel__reads">{copy.reads}</p>
+                <p className="muted">{copy.catches}</p>
+                <Tally rows={[
+                  { label: 'Detector', value: '', note: `${copy.detector}.` },
+                  { label: 'Average weight', value: formatPercent(stats.mean_weight) },
+                  { label: 'Flags it drove', value: formatInt(stats.dominant_flags),
+                    note: `${formatPercent(summary.n_anomalies ? stats.dominant_flags / summary.n_anomalies : null)} of all flagged lines.` },
+                ]} />
+                {fitted && (
+                  <details className="view-panel__fitted">
+                    <summary>As fitted on this log</summary>
+                    <Tally rows={Object.entries(fitted).map(([key, value]) => ({
+                      label: detectorFactLabel(key),
+                      value: typeof value === 'number' ? formatInt(value) : String(value),
+                    }))} />
+                  </details>
+                )}
+              </section>
+            </Reveal>
+          )
+        })}
+      </div>
 
       {settings.length > 0 && (
-        <section className="sheet__section">
-          <h2>Settings this run used</h2>
-          <p className="muted">Stored with the run, so the figures above can be reproduced.</p>
-          <Tally rows={settings} />
-        </section>
+        <Reveal>
+          <section className="settings-box">
+            <h2>Settings this run used</h2>
+            <p>Stored with the run, so every figure can be reproduced.</p>
+            <Tally rows={settings} />
+          </section>
+        </Reveal>
       )}
     </article>
   )

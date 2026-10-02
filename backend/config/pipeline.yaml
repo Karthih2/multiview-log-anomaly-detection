@@ -13,6 +13,8 @@ split:                    # engine/detection/split.py :: chronological_split
 
 semantic_features:        # engine/features/semantic.py :: build_semantic_features
   batch_size: null
+  per_line: null            # true: embed each line's own text; false: one vector per template
+  max_unique_lines: null    # past this many distinct lines, fall back to per-template vectors
 
 temporal_features:        # engine/features/temporal.py :: build_temporal_features
   window: null
@@ -63,10 +65,3 @@ evidence:
   # How many evidence packages to build per run, highest severity first.
   # null = one for every flagged anomaly (slow on large runs).
   max_packages: 200
-
-evaluation:
-  # Label-based metrics on the held-out test split. Labels are only ever read
-  # here, never by a detector.
-  enabled: true
-  # Value of the `label` column that marks a normal (non-alert) line.
-  normal_label: "-"

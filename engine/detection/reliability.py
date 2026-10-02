@@ -2,21 +2,31 @@
 import numpy as np
 import pandas as pd
 
-# Static view-quality multipliers, derived from measured AUC-ROC on the held-out
-# test set (see Module 12 diagnostic): semantic=0.306 (anti-correlated — nearly
-# blind by construction, since rows sharing a template_id have IDENTICAL
-# embeddings, so it cannot distinguish a normal vs anomalous instance of the
-# same common template), structural=0.547 (best, but was leaking test-set info
-# via a globally-computed template_global_freq — fix that in structural.py
-# BEFORE re-running this), temporal=0.428 (weak but not adversarial).
-# These down-weight views in proportion to how much they actually help,
-# rather than trusting the dynamic reliability signal alone, which has no
-# way to know a view is systematically wrong rather than just uncertain.
+# View quality is no longer a set of constants tuned on labelled test AUC. The multipliers here are
+# neutral (1.0); real quality is measured from the unlabelled learning window by
+# `view_quality_from_scores` and passed to `apply_quality_multiplier`. The dict keeps the view names and order.
 VIEW_QUALITY_MULTIPLIER = {
-    "semantic": 0.2,
+    "semantic": 1.0,
     "structural": 1.0,
-    "temporal": 0.5,
+    "temporal": 1.0,
 }
+
+# A view is never muted completely: the weakest view keeps at least this share of quality.
+MIN_VIEW_QUALITY = 0.1
+
+
+def view_quality_from_scores(train_scores: np.ndarray) -> np.ndarray:
+    """
+    Unlabelled view quality from the learning window. A view whose scores barely move on normal data
+    cannot separate anything, so its quality is its robust spread (99th minus 50th percentile of its own
+    scores), scaled so the most informative view is 1. No labels are read.
+    train_scores: shape (n_train, 3) in the order semantic, structural, temporal.
+    """
+    spread = np.percentile(train_scores, 99, axis=0) - np.percentile(train_scores, 50, axis=0)
+    top = spread.max()
+    if not np.isfinite(top) or top <= 0:
+        return np.ones(train_scores.shape[1])
+    return np.clip(spread / top, MIN_VIEW_QUALITY, 1.0)
 
 
 def semantic_reliability(embeddings: np.ndarray, kmeans_centers: np.ndarray, k: int = 10) -> np.ndarray:
@@ -76,15 +86,13 @@ def softmax_weights(reliabilities: np.ndarray) -> np.ndarray:
     return weights
 
 
-def apply_quality_multiplier(weights: np.ndarray) -> np.ndarray:
+def apply_quality_multiplier(weights: np.ndarray, quality: np.ndarray | None = None) -> np.ndarray:
     """
-    Applies the static VIEW_QUALITY_MULTIPLIER to dynamic softmax weights,
-    then re-normalizes each row back to summing to 1. This prevents a view
-    that is dynamically 'confident' but empirically unreliable (semantic)
-    from dominating fusion just because its reliability signal looks strong
-    for a given row — confidence and correctness are not the same thing.
+    Multiplies the dynamic softmax weights by each view's quality, then re-normalizes each row back to
+    summing to 1, so a view that looks confident but carries little signal cannot dominate fusion.
+    `quality` comes from `view_quality_from_scores`; without it the neutral constants apply.
     """
-    multipliers = np.array([
+    multipliers = quality if quality is not None else np.array([
         VIEW_QUALITY_MULTIPLIER["semantic"],
         VIEW_QUALITY_MULTIPLIER["structural"],
         VIEW_QUALITY_MULTIPLIER["temporal"],

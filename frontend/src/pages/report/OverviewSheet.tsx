@@ -1,107 +1,118 @@
-import type { CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
+import { Database, Fire, Flag, Hash } from '@phosphor-icons/react'
+import type { Icon } from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../api/hooks'
-import type { ComponentRisk, RootCauseCount, TimelinePoint } from '../../api/types'
-import { BarList, chooseBucket, TimelineChart } from '../../components/charts'
-import { Count, Tally } from '../../components/Ephemera'
-import type { TallyRow } from '../../components/Ephemera'
-import { ErrorNotice, SkeletonBlock, SkeletonRows } from '../../components/States'
-import { formatInt, formatLogDate, formatPercent, formatScore } from '../../lib/format'
-import { bySeverity, metricCopy, severityVar } from '../../lib/vocabulary'
+import type { Incident, Page, ScoreBucket } from '../../api/types'
+import { ScoreChart, SeverityDonut } from '../../components/dashcharts'
+import { Count, SeverityTag } from '../../components/Ephemera'
+import Reveal from '../../components/Reveal'
+import { EmptyNotice, ErrorNotice, SkeletonBlock, SkeletonRows } from '../../components/States'
+import Tile from '../../components/Tile'
+import { formatInt, formatLogDate, formatLogTime, formatPercent, logSpan } from '../../lib/format'
 import { useReport } from './ReportLayout'
 
-const TOP_ROWS = 8
+const TOP_INCIDENTS = 12
+const SHOWN_CARDS = 5
 
+function Kpi({ icon: KpiIcon, label, children, note, tone }: {
+  icon: Icon
+  label: string
+  children: ReactNode
+  note?: string
+  tone: 'peri' | 'crimson' | 'latte'
+}) {
+  return (
+    <Reveal className="bento__cell bento__cell--kpi">
+      <div className={`kpi kpi--${tone}`}>
+        <div className="kpi__top">
+          <span className="kpi__icon" aria-hidden="true"><KpiIcon size={20} weight="duotone" /></span>
+          <span className="kpi__label">{label}</span>
+        </div>
+        <p className="kpi__value">{children}</p>
+        {note && <p className="kpi__note">{note}</p>}
+      </div>
+    </Reveal>
+  )
+}
+
+/** The first tab: the headline numbers, the score over time and how serious the flags were. */
 export default function OverviewSheet() {
   const { run, summary } = useReport()
-  const bucket = chooseBucket(summary.time_start, summary.time_end)
-  const timeline = useApi<TimelinePoint[]>(`/runs/${run.id}/timeline?bucket=${bucket}`)
-  const sameDay = summary.time_start.slice(0, 10) === summary.time_end.slice(0, 10)
-  const components = useApi<ComponentRisk[]>(`/runs/${run.id}/components`)
-  const rootCauses = useApi<RootCauseCount[]>(`/runs/${run.id}/root-causes`)
-
-  const count = (value: number) => <Count to={value} />
-  const tally: TallyRow[] = [
-    { label: 'Log lines read', value: count(summary.total_rows), note: 'Lines left after dropping broken or empty ones.' },
-    { label: 'Lines flagged as anomalies', value: count(summary.n_anomalies), note: `${formatPercent(summary.anomaly_rate)} of all lines scored above the moving cutoff.` },
-    { label: 'Incidents', value: count(summary.n_incidents), note: 'Flagged lines that happened close together in time, grouped.' },
-    { label: 'Message templates found', value: count(summary.n_templates), note: 'Distinct line shapes mined by Drain3.' },
-  ]
-  const auc = summary.test_metrics?.auc_roc
-  if (auc != null) {
-    tally.push({ label: metricCopy('auc_roc').label, value: formatScore(auc), note: metricCopy('auc_roc').meaning })
-  }
-  const severities = Object.keys(summary.severity_counts).sort(bySeverity)
+  const navigate = useNavigate()
+  const scores = useApi<ScoreBucket[]>(`/runs/${run.id}/score-timeline?points=120`)
+  const incidents = useApi<Page<Incident>>(`/runs/${run.id}/incidents?limit=${TOP_INCIDENTS}`)
+  const items = incidents.data?.items ?? []
 
   return (
-    <article className="sheet">
-      <header className="sheet__head sheet__head--stamped">
-        <h1 className="display">{run.name}</h1>
-        {run.finished_at && (
-          <p className="inkmark sheet__stamp">
-            Processed<small>{formatLogDate(run.finished_at)}</small>
+    <article className="dash">
+      <header className="dash__head">
+        <div>
+          <p className="caps">Overview</p>
+          <h1 className="dash__title">{run.name}</h1>
+          <p className="muted">
+            Log from {formatLogDate(summary.time_start)} to {formatLogDate(summary.time_end)}
+            {run.finished_at ? `. Processed ${formatLogDate(run.finished_at)}.` : '.'}
           </p>
-        )}
-        <p className="lede">
-          {sameDay
-            ? `On ${formatLogDate(summary.time_start)}, `
-            : `Between ${formatLogDate(summary.time_start)} and ${formatLogDate(summary.time_end)}, `}
-          {formatInt(summary.total_rows)} log lines were read. {formatInt(summary.n_anomalies)} were flagged
-          and grouped into {formatInt(summary.n_incidents)} incidents.
-        </p>
+        </div>
+        <div className="dash__actions no-print">
+          <Link to="summary" className="btn btn--ghost btn--small">Printable summary</Link>
+          <Link to="/upload" className="btn btn--small">Analyse another log</Link>
+        </div>
       </header>
 
-      <section className="sheet__section" aria-label="Totals">
-        <Tally rows={tally} large />
-      </section>
+      <div className="bento">
+        <Kpi icon={Database} tone="peri" label="Lines read" note="After dropping broken lines">
+          <Count to={summary.total_rows} />
+        </Kpi>
+        <Kpi icon={Flag} tone="crimson" label="Flagged lines" note={`${formatPercent(summary.anomaly_rate)} of all lines`}>
+          <Count to={summary.n_anomalies} />
+        </Kpi>
+        <Kpi icon={Fire} tone="latte" label="Incidents" note="Flagged lines close together in time">
+          <Count to={summary.n_incidents} />
+        </Kpi>
+        <Kpi icon={Hash} tone="peri" label="Templates" note="Distinct line shapes found">
+          <Count to={summary.n_templates} />
+        </Kpi>
 
-      <section className="sheet__section">
-        <h2>When the anomalies happened</h2>
-        <p className="muted">Flagged lines per {bucket}. Darker means more severe.</p>
-        <ul className="legend">
-          {severities.map((severity) => (
-            <li key={severity} className="bracket">
-              <span className="tag">
-                <span className="tag__swatch" style={{ '--swatch': severityVar(severity) } as CSSProperties} />
-                {severity.toLowerCase()}
-              </span>
-              <span className="num">{formatInt(summary.severity_counts[severity])}</span>
-            </li>
-          ))}
-        </ul>
-        {timeline.loading && <SkeletonBlock height="17.5rem" />}
-        {timeline.error && <ErrorNotice error={timeline.error} onRetry={timeline.reload} />}
-        {timeline.data && (timeline.data.length ? <TimelineChart points={timeline.data} bucket={bucket} /> : <p>No line was flagged in this run.</p>)}
-      </section>
-
-      <div className="sheet__pair">
-        <section className="sheet__section">
-          <h2>Where they came from</h2>
-          <p className="muted">Flagged lines per component, with the average severity score.</p>
-          {components.loading && <SkeletonRows rows={5} height="1.75rem" />}
-          {components.error && <ErrorNotice error={components.error} onRetry={components.reload} />}
-          {components.data && (
-            <BarList rows={components.data.slice(0, TOP_ROWS).map((c) => ({
-              key: c.component ?? 'unknown',
-              label: c.component ?? 'Unknown',
-              value: c.anomaly_count,
-              note: `avg severity ${formatScore(c.avg_severity_score, 2)}`,
-            }))} />
+        <Tile title="Anomaly timeline" span={8}
+          hint="Worst score per slice of the log. Select an incident marker to open it.">
+          {(scores.loading || incidents.loading) && <SkeletonBlock height="19rem" />}
+          {scores.error && <ErrorNotice error={scores.error} onRetry={scores.reload} />}
+          {scores.data && incidents.data && (
+            <ScoreChart buckets={scores.data} incidents={items} selected={null}
+              onSelect={(id) => navigate(`incidents?incident=${id}`)}
+              trainEndRow={run.train_end_idx} driftRow={null} />
           )}
-        </section>
+        </Tile>
 
-        <section className="sheet__section">
-          <h2>Most likely origins</h2>
-          <p className="muted">How often each component ranked first as an incident's likely root cause.</p>
-          {rootCauses.loading && <SkeletonRows rows={5} height="1.75rem" />}
-          {rootCauses.error && <ErrorNotice error={rootCauses.error} onRetry={rootCauses.reload} />}
-          {rootCauses.data && (rootCauses.data.length ? (
-            <BarList rows={rootCauses.data.slice(0, TOP_ROWS).map((r) => ({
-              key: r.component, label: r.component, value: r.times_ranked_root_cause,
-            }))} />
-          ) : <p>No incidents, so nothing to rank.</p>)}
-          <p><Link to="incidents" className="link">Go through the incidents</Link></p>
-        </section>
+        <Tile title="Severity" span={4} hint="How serious the flagged lines are">
+          <SeverityDonut counts={summary.severity_counts} />
+        </Tile>
+
+        <Tile title="Top incidents" span={12} hint="The largest groups of flagged lines"
+          action={<Link to="incidents" className="link">All {formatInt(summary.n_incidents)} incidents</Link>}>
+          {incidents.loading && <SkeletonRows rows={2} height="6rem" />}
+          {incidents.error && <ErrorNotice error={incidents.error} onRetry={incidents.reload} />}
+          {incidents.data && !items.length && <EmptyNotice title="No incidents"><p>Nothing was flagged in this run.</p></EmptyNotice>}
+          {items.length > 0 && (
+            <ul className="incident-cards">
+              {items.slice(0, SHOWN_CARDS).map((incident) => (
+                <li key={incident.incident_id}>
+                  <Link to={`incidents?incident=${incident.incident_id}`} className="incident-card">
+                    <span className="incident-card__top">
+                      <span className="data">No. {incident.incident_id}</span>
+                      {incident.peak_severity && <SeverityTag severity={incident.peak_severity} />}
+                    </span>
+                    <span className="incident-card__when">{formatLogTime(incident.start_time)}</span>
+                    <span><span className="num">{formatInt(incident.n_anomalies)}</span> lines over {logSpan(incident.start_time, incident.end_time)}</span>
+                    <span className="muted">Origin <strong>{incident.top_root_cause ?? 'not ranked'}</strong></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Tile>
       </div>
     </article>
   )

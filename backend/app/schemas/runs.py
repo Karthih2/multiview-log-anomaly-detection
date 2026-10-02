@@ -52,4 +52,3 @@ class RunSummary(BaseModel):
     time_start: datetime
     time_end: datetime
     severity_counts: dict[str, int]
-    test_metrics: dict[str, Any] | None

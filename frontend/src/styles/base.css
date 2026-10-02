@@ -1,39 +1,72 @@
 @import '@fontsource-variable/archivo/standard.css';
-@import '@fontsource-variable/sometype-mono/index.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
+/* ---------- Tokens ----------
+   Three colours carry the product, in this order of importance:
+   Primal Crimson #940501 (action, key figures, severity), Cloudlight Periwinkle #95BBEA (secondary,
+   chart areas, info), Latte Silk #FFF8E6 (the ground). Everything else is a tint or shade of those. */
 :root {
-  /* Palette from assets: Light Sand ground, Wine Red as the one heavy colour. */
-  --sand: #f5ebd0;
-  --sand-deep: #eadcb6;
-  --paper: #fbf4e0;
-  --wine: #7f011f;
-  --ink: #2b1218;
-  --ink-soft: #5c4046;
-  --rule: #2b121838;
-  --rule-strong: #2b1218;
+  color-scheme: light;
+  --latte: #fff8e6;
+  --latte-deep: #f6ebcb;
+  --paper: #fffcf2;
+  --crimson: #940501;
+  --crimson-soft: #b83a32;
+  --peri: #95bbea;
+  --peri-deep: #2a5dba;
+  --ink: #2a1514;
+  --ink-soft: #5c4442;
+  --rule: #2a151430;
+  --rule-strong: #2a1514;
 
-  /* Stamp inks from design/assets/stamp.jpg carry the three views: ochre, slate blue, dark
-     green-grey, each dark enough for paper-coloured text on top (4.5:1 or better).
-     Told apart by lightness as well as hue, and always labelled. */
-  --view-semantic: #96590f;
-  --view-structural: #4f6b99;
-  --view-temporal: #3b4a40;
+  /* Names used across the stylesheets. */
+  --sand: var(--latte);
+  --sand-deep: var(--latte-deep);
+  --wine: var(--crimson);
+  --bg: var(--latte);
+  --surface: var(--paper);
+  --surface-2: var(--latte-deep);
+  --line: var(--rule);
+  --line-strong: #2a151466;
+  --ink-2: var(--ink-soft);
+  --mute: #6b5654;
+  --accent: var(--crimson);
+  --accent-soft: #94050114;
+  --on-solid: var(--latte);
 
-  /* Severity is one warm ramp, light to dark. */
-  --sev-low: #b8902a;
-  --sev-medium: #c24e14;
-  --sev-high: #85141f;
-  --sev-critical: #3f0810;
+  /* The three views: validated together (all pairs). Each is always named beside its colour. */
+  --view-semantic: #2a5dba;
+  --view-structural: #0e8a6a;
+  --view-temporal: #b7791a;
+
+  /* Severity: a crimson ramp, light to dark, always printed with its word. */
+  --sev-low: #e0a48f;
+  --sev-medium: #d2644b;
+  --sev-high: #b02a1f;
+  --sev-critical: #6b0300;
+  --alert: #b02a1f;
+
+  --glitch-1: #e4d9bb;
+  --glitch-2: #95bbea;
+  --glitch-3: #d9a39c;
 
   --font-display: 'Archivo Variable', 'Arial Narrow', sans-serif;
-  --font-body: 'Archivo Variable', system-ui, sans-serif;
-  --font-data: 'Sometype Mono Variable', ui-monospace, monospace;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, monospace;
 
-  --step--1: 0.8125rem;
+  --radius: 6px;
+  --radius-sm: 4px;
+
+  --step--1: 0.875rem;
   --step-0: 1rem;
-  --step-1: 1.1875rem;
-  --step-2: 1.5rem;
-  --step-3: 2.125rem;
+  --step-1: 1.25rem;
+  --step-2: 1.625rem;
+  --step-3: 2.25rem;
   --step-4: clamp(2.5rem, 2rem + 2.4vw, 3.75rem);
   --step-5: clamp(3rem, 2rem + 5.2vw, 5.75rem);
 
@@ -47,42 +80,40 @@
   --space-8: 4.5rem;
   --space-9: 7rem;
 
-  --page: 78rem;
+  --page: 82rem;
   --gutter: clamp(1rem, 4vw, 2.5rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Layers: page content 0, sticky bars 10, tooltips 20, paper grain 30. */
   --z-sticky: 10;
   --z-tooltip: 20;
-  --z-grain: 30;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0;
 }
 
 html {
-  background: var(--sand);
+  background: var(--latte);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 100%;
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
-  scrollbar-color: var(--wine) var(--sand-deep);
   scroll-padding-top: 5rem;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
+  font-size: var(--step-0);
+  background: transparent;
 }
 
 ::selection {
-  background: var(--wine);
-  color: var(--sand);
+  background: var(--crimson);
+  color: var(--latte);
 }
 
 h1,
@@ -108,6 +139,7 @@ h1,
 h2,
 h3 {
   text-wrap: balance;
+  line-height: 1.15;
 }
 
 p {
@@ -116,10 +148,97 @@ p {
 
 a {
   color: inherit;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
 }
 
+/* ---------- Type hierarchy ----------
+   Archivo in capitals for page and band titles. Plex Sans 600 for section titles, 400 for body.
+   Small caps labels in the muted tone. Figures are tabular Plex Mono. */
+.display {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  line-height: 1;
+}
+
+.lede {
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+.muted {
+  color: var(--mute);
+}
+
+.caps {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.num,
+.data {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page {
+  width: min(100% - var(--gutter) * 2, var(--page));
+  margin-inline: auto;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.plain-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.table-scroll {
+  position: relative;
+  overflow-x: auto;
+}
+
+/* ---------- Background: a soft periwinkle-to-crimson wash over the latte ground, drifting slowly ---------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--latte);
+  background-image: linear-gradient(120deg, #95bbea55 0%, #fff8e600 40%, #fff8e600 60%, #94050130 100%);
+  background-size: 240% 240%;
+  animation: wash 45s ease-in-out infinite alternate;
+}
+
+@keyframes wash {
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+/* ---------- Buttons: flat, small radius, instant colour change ---------- */
 button,
 input,
 select {
@@ -131,89 +250,6 @@ button {
   cursor: pointer;
 }
 
-:focus-visible {
-  outline: 2px solid var(--wine);
-  outline-offset: 3px;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* ---------- Type ---------- */
-
-.display {
-  font-family: var(--font-display);
-  font-stretch: 68%;
-  font-weight: 800;
-  line-height: 0.95;
-  text-transform: uppercase;
-  letter-spacing: -0.005em;
-}
-
-.data,
-.num {
-  font-family: var(--font-data);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-.caps {
-  font-family: var(--font-display);
-  font-stretch: 80%;
-  font-weight: 700;
-  font-size: var(--step--1);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.muted {
-  color: var(--ink-soft);
-}
-
-.lede {
-  font-size: var(--step-1);
-  line-height: 1.45;
-  max-width: 62ch;
-}
-
-.prose {
-  max-width: 68ch;
-}
-
-.prose p + p {
-  margin-top: var(--space-4);
-}
-
-/* ---------- Layout ---------- */
-
-.page {
-  width: min(100% - 2 * var(--gutter), var(--page));
-  margin-inline: auto;
-}
-
-.stack > * + * {
-  margin-top: var(--space-4);
-}
-
-.rule {
-  border: 0;
-  border-top: 1px solid var(--rule-strong);
-  margin: 0;
-}
-
-/* ---------- Controls: square, flat, state changes are instant ---------- */
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -221,15 +257,14 @@ table {
   gap: var(--space-2);
   min-height: 3rem;
   padding: 0 var(--space-5);
-  border: 2px solid var(--wine);
-  background: var(--wine);
-  color: var(--sand);
-  font-family: var(--font-display);
-  font-stretch: 80%;
+  background: var(--crimson);
+  color: var(--latte);
+  border: 2px solid var(--crimson);
+  border-radius: var(--radius);
   font-weight: 700;
   font-size: var(--step-0);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -245,45 +280,52 @@ table {
 
 .btn--ghost {
   background: transparent;
-  color: var(--wine);
+  color: var(--crimson);
 }
 
 .btn--ghost:hover {
-  background: var(--wine);
-  border-color: var(--wine);
-  color: var(--sand);
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: var(--latte);
 }
 
 .btn--small {
-  min-height: 2.25rem;
-  padding: 0 var(--space-3);
-  font-size: var(--step--1);
+  min-height: 2.5rem;
+  padding: 0 var(--space-4);
+  font-size: 0.8125rem;
 }
 
 .btn:disabled,
 .btn[aria-disabled='true'] {
   background: transparent;
-  border-color: var(--rule-strong);
+  border-color: var(--ink);
   color: var(--ink-soft);
+  opacity: 0.55;
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .link {
   background: none;
   border: 0;
   padding: 0;
-  color: var(--wine);
+  color: var(--crimson);
   font-weight: 600;
   text-decoration: underline;
-  text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
 }
 
 .link:hover {
   color: var(--ink);
 }
 
+:focus-visible {
+  outline: 2px solid var(--crimson);
+  outline-offset: 3px;
+}
+
+/* ---------- Forms ---------- */
 .field {
   display: grid;
   gap: var(--space-2);
@@ -291,29 +333,42 @@ table {
 
 .field label {
   font-weight: 600;
+  font-size: var(--step--1);
 }
 
 .field input[type='text'],
-.field select {
+.field select,
+select {
   min-height: 3rem;
   padding: 0 var(--space-3);
-  border: 1px solid var(--rule-strong);
   background: var(--paper);
-  caret-color: var(--wine);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  width: 100%;
+}
+
+.field input[type='text']:focus,
+.field select:focus {
+  border-color: var(--crimson);
+  outline: 0;
 }
 
 .field .hint {
   font-size: var(--step--1);
-  color: var(--ink-soft);
+  color: var(--mute);
 }
 
-/* ---------- Site chrome ---------- */
+.form-error {
+  color: var(--sev-high);
+  font-weight: 600;
+}
 
+/* ---------- Masthead ---------- */
 .masthead {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: var(--sand);
+  background: color-mix(in srgb, var(--latte) 92%, transparent);
   border-bottom: 1px solid var(--rule-strong);
 }
 
@@ -322,7 +377,7 @@ table {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  min-height: 4rem;
+  min-height: 4.25rem;
 }
 
 .wordmark {
@@ -330,13 +385,19 @@ table {
   align-items: center;
   gap: var(--space-3);
   font-family: var(--font-display);
-  font-stretch: 68%;
+  font-stretch: 80%;
   font-weight: 900;
-  font-size: 1.6rem;
-  letter-spacing: 0.01em;
+  font-size: var(--step-2);
   text-transform: uppercase;
+  color: var(--crimson);
   text-decoration: none;
-  color: var(--wine);
+}
+
+.wordmark__bars {
+  display: block;
+  width: 2.2rem;
+  height: 1.7rem;
+  color: var(--crimson);
 }
 
 .masthead nav {
@@ -353,7 +414,7 @@ table {
 
 .masthead nav a:not(.btn):hover,
 .masthead nav a[aria-current='page']:not(.btn) {
-  color: var(--wine);
+  color: var(--crimson);
   text-decoration: underline;
   text-underline-offset: 0.35em;
   text-decoration-thickness: 2px;
@@ -363,109 +424,173 @@ table {
   margin-top: var(--space-9);
   border-top: 1px solid var(--rule-strong);
   padding-block: var(--space-6);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
 }
 
 .footer__inner {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
   justify-content: space-between;
-  gap: var(--space-4);
-  font-size: var(--step--1);
 }
 
 .footer nav {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-5);
 }
 
 @media (max-width: 40rem) {
+  .masthead nav .nav-optional {
+    display: none;
+  }
   .masthead nav {
     gap: var(--space-3);
   }
-  .masthead nav .nav-optional {
+}
+
+@media (max-width: 26rem) {
+  .wordmark__text {
     display: none;
   }
 }
 
 /* ---------- Loading, empty, error ---------- */
-
 .skeleton {
   display: block;
-  background: linear-gradient(100deg, var(--sand-deep) 40%, var(--paper) 50%, var(--sand-deep) 60%) 0 0 / 300% 100%;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--latte-deep) 25%, #f0e1b6 50%, var(--latte-deep) 75%);
+  background-size: 200% 100%;
   animation: skeleton-sweep 1.4s linear infinite;
-  min-height: 1em;
 }
 
 .skeleton--line {
-  height: 0.9em;
-  margin-block: 0.45em;
+  height: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 @keyframes skeleton-sweep {
-  from {
-    background-position: 100% 0;
-  }
   to {
-    background-position: 0 0;
+    background-position: -200% 0;
   }
 }
 
 .notice {
-  border: 1px solid var(--rule-strong);
-  background: var(--paper);
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
   padding: var(--space-5);
-  max-width: 44rem;
-}
-
-.notice h2,
-.notice h3 {
-  font-size: var(--step-1);
-  margin-bottom: var(--space-2);
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
 }
 
 .notice--error {
-  border: 2px solid var(--wine);
+  border: 2px solid var(--crimson);
 }
 
-.notice .btn {
-  margin-top: var(--space-4);
+/* ---------- Tags and legend ---------- */
+.tag {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.45em;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
-/* ---------- Paper grain, fixed and inert ---------- */
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-grain);
-  pointer-events: none;
-  opacity: 0.5;
-  mix-blend-mode: multiply;
+.tag__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  background: var(--swatch);
+  flex: none;
 }
 
-.grain .noise-overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+/* A severity or view label: a square swatch and the word, held in brackets. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.pill::before {
+  content: '';
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  background: var(--swatch, var(--mute));
+}
+
+/* ---------- Tally (label, dotted lead, figure) ---------- */
+.tally {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tally__row {
+  display: grid;
+  grid-template-columns: auto minmax(1rem, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.tally__lead {
+  border-bottom: 1px dotted var(--ink);
+  opacity: 0.45;
+  transform: translateY(-0.25em);
+}
+
+.tally__row dd {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.tally__note {
+  grid-column: 1 / -1;
+  font-size: var(--step--1);
+  color: var(--mute);
+}
+
+.legal {
+  max-width: 46rem;
+  padding-block: var(--space-7);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.legal li + li {
+  margin-top: var(--space-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton {
+  .skeleton,
+  .backdrop {
     animation: none;
   }
-  .grain {
-    display: none;
+  html {
+    scroll-behavior: auto;
   }
 }
 
 @media print {
   .masthead,
   .footer,
-  .grain,
+  .backdrop,
   .no-print {
     display: none !important;
   }
   html {
     background: #fff;
+    color: #000;
   }
 }

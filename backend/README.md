@@ -23,8 +23,8 @@ raw log ──► ingest ──► parse (Drain3) ──► chronological split
                            rolling MAD threshold + severity
                                               │
               ┌──────────────┬────────────────┼────────────────┬──────────────┐
-            drift         evidence       incidents +        evaluation     database
-          (KS test)       packages       root-cause        (if labelled)
+            drift         evidence       incidents +       database
+          (KS test)       packages       root-cause
                                           ranking
 ```
 
@@ -55,8 +55,7 @@ backend/
 
 ## Setup
 
-Uses the project's existing virtual environment, which already has the
-experiment's dependencies. From the project root:
+Uses one environment for the engine and the backend (root `requirements.txt`). From the project root:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
@@ -82,7 +81,7 @@ All commands are run from `backend/`.
 
 `import-artifacts` reads the saved parsing, feature, scoring, fusion, threshold
 and drift outputs as they are, then recomputes incident clustering, root-cause
-ranking and the test-split metrics from the saved anomaly flags. Those are
+ranking from the saved anomaly flags. Those are
 recomputed because the saved RCA files were produced by an earlier threshold
 run and no longer match `is_anomaly.npy`.
 
@@ -116,7 +115,7 @@ Prefix `/api/v1`. List endpoints take `limit` and `offset`.
 | GET | `/runs` | all runs, newest first |
 | GET | `/runs/{id}` | status, current stage, counts, parameters, planned stages, stage log with start times, per-view summary |
 | DELETE | `/runs/{id}` | remove a run and its data |
-| GET | `/runs/{id}/summary` | header numbers: lines, anomalies, rate, incidents, severity counts, test metrics |
+| GET | `/runs/{id}/summary` | header numbers: lines, anomalies, rate, incidents, severity counts |
 | GET | `/runs/{id}/timeline` | anomalies per day and severity; `bucket=hour` for short logs |
 | GET | `/runs/{id}/components` | per-component anomaly count and mean severity |
 | GET | `/runs/{id}/anomalies` | flagged events, most severe first; filters `severity`, `component`, `incident_id` |
@@ -129,7 +128,6 @@ Prefix `/api/v1`. List endpoints take `limit` and `offset`.
 | GET | `/runs/{id}/root-causes` | how often each component ranked first |
 | GET | `/runs/{id}/cooccurrence` | component pairs seen in the same incident |
 | GET | `/runs/{id}/drift` | KS drift windows and control test per signal |
-| GET | `/runs/{id}/evaluation` | label-based metrics |
 
 A run moves through `queued → running → completed | failed`. While running,
 `stage` shows the current pipeline step. Result endpoints return 409 until the
@@ -150,7 +148,11 @@ Every table is keyed by `run_id`.
 | `component_cooccurrence` | component pair and how many incidents share it |
 | `drift_summaries`, `drift_windows` | drift signal and each KS window |
 | `evidence_packages` | evidence for one flagged event |
-| `evaluation_metrics` | metric set per scope (`test`, `ablation:*`, `seen_templates`, ...) |
+
+The old `evaluation_metrics` table, and the `log_events.label` column, are unused.
+An existing `storage/logsight.db` keeps working untouched. For a clean
+database, delete it (or point `LOGSIGHT_DATABASE_URL` elsewhere) and run
+`python -m app.cli import-artifacts`.
 
 To move to PostgreSQL, set `LOGSIGHT_DATABASE_URL` and install a driver; the
 models use only portable SQLAlchemy types.

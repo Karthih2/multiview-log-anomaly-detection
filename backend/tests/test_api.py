@@ -15,7 +15,6 @@ def test_run_summary(client, run_id):
     assert body["anomaly_rate"] == 0.5
     assert body["n_incidents"] == 2
     assert body["severity_counts"] == {"CRITICAL": 1, "LOW": 1, "MEDIUM": 1}
-    assert body["test_metrics"] == {"precision": 0.5, "recall": 1.0}
 
 
 def test_run_detail_keeps_raw_row_count(client, run_id):
@@ -94,7 +93,27 @@ def test_incidents_largest_first_with_top_root_cause(client, run_id):
     detail = client.get(f"{API}/runs/{run_id}/incidents/2").json()
     assert detail["template_counts"] == {"1": 1, "2": 1}
     assert detail["root_cause_candidates"][0]["component"] == "APP"
+    assert detail["peak_severity"] in ("LOW", "MEDIUM", "HIGH", "CRITICAL")
     assert client.get(f"{API}/runs/{run_id}/incidents/99").status_code == 404
+
+
+def test_score_timeline_covers_every_line(client, run_id):
+    buckets = client.get(f"{API}/runs/{run_id}/score-timeline?points=10").json()
+    assert sum(b["n_anomalies"] for b in buckets) == 3
+    assert buckets[0]["row_start"] == 0
+
+
+def test_root_cause_clusters_group_incidents_by_top_component(client, run_id):
+    clusters = client.get(f"{API}/runs/{run_id}/root-cause-clusters").json()
+    assert sorted((c["component"], c["n_incidents"], c["n_anomalies"]) for c in clusters) == [
+        ("APP", 1, 2), ("KERNEL", 1, 1)]
+    assert all(c["incidents"] for c in clusters)
+
+
+def test_baseline_is_mean_score_of_unflagged_lines(client, run_id):
+    baseline = client.get(f"{API}/runs/{run_id}/baseline").json()
+    assert set(baseline) == {"semantic", "structural", "temporal"}
+    assert all(0 <= v <= 1 for v in baseline.values())
 
 
 def test_root_cause_summary_and_empty_cooccurrence(client, run_id):
@@ -103,14 +122,12 @@ def test_root_cause_summary_and_empty_cooccurrence(client, run_id):
     assert client.get(f"{API}/runs/{run_id}/cooccurrence").json() == []
 
 
-def test_drift_evaluation_templates_evidence(client, run_id):
+def test_drift_templates_evidence(client, run_id):
     drift = client.get(f"{API}/runs/{run_id}/drift").json()
     assert drift[0]["signal"] == "embedding"
     assert drift[0]["first_flagged_row"] is None
     assert len(drift[0]["windows"]) == 1
 
-    assert client.get(f"{API}/runs/{run_id}/evaluation").json() == [
-        {"scope": "test", "metrics": {"precision": 0.5, "recall": 1.0}}]
     templates = client.get(f"{API}/runs/{run_id}/templates").json()
     assert [t["template_id"] for t in templates["items"]] == [1, 2]
     assert client.get(f"{API}/runs/{run_id}/evidence").json()["total"] == 1

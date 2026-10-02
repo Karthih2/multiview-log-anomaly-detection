@@ -48,4 +48,3 @@ class PipelineResult:
     drift: dict[str, DriftSignal] = field(default_factory=dict)
     evidence: list[dict[str, Any]] = field(default_factory=list)
     rca: RootCauseAnalysis | None = None
-    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)

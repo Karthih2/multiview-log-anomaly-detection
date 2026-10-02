@@ -34,7 +34,6 @@ def make_result() -> PipelineResult:
     """A small hand-built result: 6 events, 3 flagged, grouped into 2 incidents."""
     n = 6
     events = pd.DataFrame({
-        "label": ["-", "-", "KERNDTLB", "-", "KERNDTLB", "-"],
         "timestamp": np.arange(1117838570, 1117838570 + n),
         "time": pd.date_range("2005-06-03 15:42:50", periods=n, freq="12h"),
         "node": ["R02-M1-N0"] * n,
@@ -86,7 +85,6 @@ def make_result() -> PipelineResult:
                 for incident_id, component in ((1, "KERNEL"), (2, "APP"))
             ]),
         ),
-        metrics={"test": {"precision": 0.5, "recall": 1.0}},
     )
 
 

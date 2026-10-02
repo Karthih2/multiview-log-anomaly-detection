@@ -78,9 +78,6 @@ def run_summary(run: CompletedRun, db: DbSession):
         select(models.LogEvent.severity, func.count())
         .where(models.LogEvent.run_id == run.id, models.LogEvent.is_anomaly)
         .group_by(models.LogEvent.severity)).all())
-    test_metrics = db.scalar(
-        select(models.EvaluationMetric.metrics)
-        .where(models.EvaluationMetric.run_id == run.id, models.EvaluationMetric.scope == "test"))
     return RunSummary(
         run_id=run.id,
         total_rows=run.total_rows,
@@ -91,5 +88,4 @@ def run_summary(run: CompletedRun, db: DbSession):
         time_start=run.time_start,
         time_end=run.time_end,
         severity_counts=severity_counts,
-        test_metrics=test_metrics,
     )

@@ -1,9 +1,9 @@
 """Loads the outputs the experiment already wrote to ``data/processed``.
 
 The expensive stages (parsing, features, per-view scoring, fusion, threshold,
-drift) are read from disk as the experiment saved them. Root-cause analysis and
-the test-split metrics are cheap and depend on the anomaly flags, so they are
-recomputed from those flags to stay consistent with them.
+drift) are read from disk as the experiment saved them. Root-cause analysis is
+cheap and depends on the anomaly flags, so it is recomputed from those flags
+to stay consistent with them.
 """
 import json
 from pathlib import Path
@@ -18,7 +18,7 @@ from app.pipeline.result import DriftSignal, PipelineResult, ViewScores
 from app.pipeline.runner import StageCallback
 
 # Stage names reported through on_stage, in execution order.
-ARTIFACT_STAGES = ("load_artifacts", "root_cause", "evaluation")
+ARTIFACT_STAGES = ("load_artifacts", "root_cause")
 
 # File names are the ones the experiment scripts in ../engine write.
 PARSED_EVENTS = "bgl_parsed.parquet"
@@ -26,8 +26,6 @@ STRUCTURAL_FEATURES = "structural_features.parquet"
 SPLIT_INDICES = "split_indices.json"
 EVIDENCE_SAMPLE = "evidence_sample.json"
 DRIFT_FINDINGS = "drift_findings.json"
-ABLATION_METRICS = "ablation_metrics.json"
-UNSEEN_TEMPLATE_METRICS = "unseen_template_metrics.json"
 ARRAYS = {
     "semantic": "semantic_anomaly_scores.npy",
     "structural": "structural_anomaly_scores.npy",
@@ -43,7 +41,7 @@ DRIFT_SIGNALS = {
     "embedding": ("drift_embedding.parquet", "embedding"),
     "template_frequency": ("drift_frequency.parquet", "template_freq"),
 }
-EVENT_COLUMNS = ["label", "timestamp", "time", "node", "type", "component", "level",
+EVENT_COLUMNS = ["timestamp", "time", "node", "type", "component", "level",
                  "content", "template_id", "template"]
 
 
@@ -65,17 +63,6 @@ def _load_drift(directory: Path) -> dict[str, DriftSignal]:
             control_test=findings[f"{prefix}_control_test"],
         )
     return drift
-
-
-def _load_research_metrics(directory: Path) -> dict[str, dict[str, Any]]:
-    """Ablation and unseen-template results, stored as the experiment reported them."""
-    metrics: dict[str, dict[str, Any]] = {}
-    for filename, prefix in ((ABLATION_METRICS, "ablation:"), (UNSEEN_TEMPLATE_METRICS, "")):
-        path = directory / filename
-        if path.exists():
-            metrics.update({f"{prefix}{name}": values for name, values in _read_json(path).items()
-                            if isinstance(values, dict)})
-    return metrics
 
 
 def load_artifacts(directory: Path, cfg: PipelineConfig, on_stage: StageCallback) -> PipelineResult:
@@ -101,10 +88,6 @@ def load_artifacts(directory: Path, cfg: PipelineConfig, on_stage: StageCallback
     on_stage("root_cause")
     rca = stages.analyse_root_cause(df, is_anomaly, arrays["severity_score"], cfg)
 
-    on_stage("evaluation")
-    metrics = stages.evaluate(df, arrays["final"], is_anomaly, split["val_end_idx"], cfg)
-    metrics.update(_load_research_metrics(directory))
-
     return PipelineResult(
         events=df,
         templates=templates,
@@ -119,5 +102,4 @@ def load_artifacts(directory: Path, cfg: PipelineConfig, on_stage: StageCallback
         drift=_load_drift(directory),
         evidence=evidence,
         rca=rca,
-        metrics=metrics,
     )

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { DriftSignal, TimelinePoint } from '../api/types'
 import { formatCompact, formatInt, formatLogDate } from '../lib/format'
 import { bySeverity, severityVar } from '../lib/vocabulary'
-import { SeverityTag } from './Ephemera'
+import { prefersReducedMotion, SeverityTag } from './Ephemera'
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)
@@ -87,6 +87,8 @@ const MARGIN = { top: 12, right: 8, bottom: 28, left: 44 }
 export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoint[]; bucket?: Bucket }) {
   const [ref, width] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
+  // Bars grow from the baseline once, the first time the chart scrolls into view.
+  const [grown, setGrown] = useState(prefersReducedMotion)
   const { days, severities } = useMemo(() => fillDays(points, bucket), [points, bucket])
 
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
@@ -123,6 +125,16 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
     .filter((label) => label.i * band + label.text.length * LABEL_CHAR_PX <= innerWidth + MARGIN.right)
   const hovered = hover === null ? null : days[hover]
 
+  useEffect(() => {
+    const node = ref.current
+    if (grown || !node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setGrown(true); observer.disconnect() }
+    }, { threshold: 0.25 })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [grown, ref])
+
   return (
     <figure className="chart">
       <div
@@ -138,6 +150,14 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
         {width > 0 && (
           <svg width={width} height={CHART_HEIGHT} role="img"
             aria-label={`Flagged anomalies per ${bucket} from ${bucketLabel(days[0]?.date ?? '')} to ${bucketLabel(days[days.length - 1]?.date ?? '')}, stacked by severity. A table follows.`}>
+            <defs>
+              {severities.map((severity) => (
+                <linearGradient key={severity} id={`sevgrad-${severity}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={severityVar(severity)} />
+                  <stop offset="100%" stopColor={severityVar(severity)} stopOpacity="0.55" />
+                </linearGradient>
+              ))}
+            </defs>
             <g transform={`translate(${MARGIN.left},${MARGIN.top})`}>
               {ticks.map((tick) => (
                 <g key={tick} transform={`translate(0,${y(tick)})`}>
@@ -151,6 +171,8 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
                 let base = 0
                 return (
                   <g key={day.date} transform={`translate(${i * band},0)`} opacity={hover === null || hover === i ? 1 : 0.45}>
+                    <g className={grown ? 'chart__stack chart__stack--in' : 'chart__stack'}
+                      style={{ transitionDelay: `${Math.min(i * 8, 320)}ms` }}>
                     {severities.map((severity) => {
                       const count = day.counts[severity] ?? 0
                       if (!count) return null
@@ -159,9 +181,10 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
                       base += count
                       return (
                         <rect key={severity} x={gap / 2} y={y1} width={Math.max(band - gap, 0.5)}
-                          height={Math.max(height - (height > 3 ? 1 : 0), 0.5)} fill={severityVar(severity)} />
+                          height={Math.max(height - (height > 3 ? 1 : 0), 0.5)} fill={`url(#sevgrad-${severity})`} />
                       )
                     })}
+                    </g>
                   </g>
                 )
               })}
@@ -240,7 +263,7 @@ export function BarList({ rows, max, labelWidth = '9rem', stacked = false }: {
           <span className="bars__track">
             <span className="bars__bar" style={{
               '--ratio': top > 0 ? row.value / top : 0,
-              background: row.colour ?? 'var(--wine)',
+              '--bar': row.colour ?? 'var(--view-semantic)',
             } as CSSProperties} />
             <span className="bars__value num">{row.display ?? formatInt(row.value)}</span>
           </span>
@@ -257,7 +280,7 @@ export function ShareBar({ parts }: { parts: { key: string; label: string; share
     <div className="share" role="img"
       aria-label={parts.map((p) => `${p.label} ${(p.share * 100).toFixed(0)} percent`).join(', ')}>
       {parts.map((part) => (
-        <span key={part.key} className="share__part" style={{ flexGrow: part.share, background: part.colour }}>
+        <span key={part.key} className="share__part" style={{ flexGrow: part.share, '--bar': part.colour } as CSSProperties}>
           <span className="share__label">{part.label}</span>
           <span className="num">{(part.share * 100).toFixed(0)}%</span>
         </span>
@@ -305,7 +328,7 @@ export function DriftChart({ signal, trainEnd }: { signal: DriftSignal; trainEnd
             ))}
             {windows.filter((w) => w.drift_flagged).map((w) => (
               <rect key={w.window_start} x={x(w.window_start)} y={innerHeight + 3}
-                width={Math.max(x(w.window_end) - x(w.window_start) - 1, 1)} height={4} fill="var(--wine)" />
+                width={Math.max(x(w.window_end) - x(w.window_start) - 1, 1)} height={4} fill="var(--alert)" />
             ))}
             {trainEnd !== null && trainEnd < lastRow && (
               <g transform={`translate(${x(trainEnd)},0)`}>

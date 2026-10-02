@@ -9,7 +9,7 @@ import yaml
 from app.core.config import get_settings
 from app.pipeline import experiment
 
-BACKEND_SECTIONS = ("evidence", "evaluation")
+BACKEND_SECTIONS = ("evidence",)
 
 
 @dataclass(frozen=True)
