@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import Noise from '../reactbits/Noise'
 import { Barcode } from './Ephemera'
@@ -52,10 +53,25 @@ function ScrollToTop() {
   return null
 }
 
+/** Content loads after first paint and moves things down; keep scroll-in triggers aligned with the page. */
+function RefreshTriggers() {
+  useEffect(() => {
+    let timer: number | undefined
+    const observer = new ResizeObserver(() => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => ScrollTrigger.refresh(), 150)
+    })
+    observer.observe(document.body)
+    return () => { observer.disconnect(); window.clearTimeout(timer) }
+  }, [])
+  return null
+}
+
 export default function Chrome() {
   return (
     <>
       <ScrollToTop />
+      <RefreshTriggers />
       <Masthead />
       <main id="main">
         <Outlet />

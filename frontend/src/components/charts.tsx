@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { DriftSignal, TimelinePoint } from '../api/types'
 import { formatCompact, formatInt, formatLogDate } from '../lib/format'
 import { bySeverity, severityVar } from '../lib/vocabulary'
-import { SeverityTag } from './Ephemera'
+import { prefersReducedMotion, SeverityTag } from './Ephemera'
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)
@@ -87,6 +87,8 @@ const MARGIN = { top: 12, right: 8, bottom: 28, left: 44 }
 export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoint[]; bucket?: Bucket }) {
   const [ref, width] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
+  // Bars grow from the baseline once, the first time the chart scrolls into view.
+  const [grown, setGrown] = useState(prefersReducedMotion)
   const { days, severities } = useMemo(() => fillDays(points, bucket), [points, bucket])
 
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right)
@@ -123,6 +125,16 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
     .filter((label) => label.i * band + label.text.length * LABEL_CHAR_PX <= innerWidth + MARGIN.right)
   const hovered = hover === null ? null : days[hover]
 
+  useEffect(() => {
+    const node = ref.current
+    if (grown || !node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setGrown(true); observer.disconnect() }
+    }, { threshold: 0.25 })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [grown, ref])
+
   return (
     <figure className="chart">
       <div
@@ -151,6 +163,8 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
                 let base = 0
                 return (
                   <g key={day.date} transform={`translate(${i * band},0)`} opacity={hover === null || hover === i ? 1 : 0.45}>
+                    <g className={grown ? 'chart__stack chart__stack--in' : 'chart__stack'}
+                      style={{ transitionDelay: `${Math.min(i * 8, 320)}ms` }}>
                     {severities.map((severity) => {
                       const count = day.counts[severity] ?? 0
                       if (!count) return null
@@ -162,6 +176,7 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
                           height={Math.max(height - (height > 3 ? 1 : 0), 0.5)} fill={severityVar(severity)} />
                       )
                     })}
+                    </g>
                   </g>
                 )
               })}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useApi, usePaged } from '../../api/hooks'
 import type { Cooccurrence, Incident, IncidentDetail, RootCauseCount } from '../../api/types'
 import { BarList } from '../../components/charts'
+import Collapse from '../../components/Collapse'
 import { EmptyNotice, ErrorNotice, SkeletonRows } from '../../components/States'
 import { formatInt, formatLogTime, formatScore, logSpan } from '../../lib/format'
 import { RANKING_FACTORS } from '../../lib/vocabulary'
@@ -19,7 +20,7 @@ function Candidates({ runId, incidentId }: { runId: number; incidentId: number }
   const candidates = detail.data.root_cause_candidates
 
   return (
-    <div className="incident__detail">
+    <div className="incident__detail panel">
       <h3>Root-cause candidates, most likely first</h3>
       {candidates.length === 1 && (
         <p className="muted">Only one component was involved, so there is nothing to rank against.</p>
@@ -90,7 +91,7 @@ function IncidentCard({ runId, incident }: { runId: number; incident: Incident }
           {open ? 'Close' : 'Candidates'}
         </button>
       </div>
-      {open && <div id={panel}><Candidates runId={runId} incidentId={incident.incident_id} /></div>}
+      <Collapse open={open} id={panel}><Candidates runId={runId} incidentId={incident.incident_id} /></Collapse>
     </li>
   )
 }

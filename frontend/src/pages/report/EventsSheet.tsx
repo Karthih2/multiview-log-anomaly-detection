@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useApi, usePaged } from '../../api/hooks'
 import type { AnomalyKind, ComponentRisk, EventDetail, LogEvent } from '../../api/types'
 import { BarList } from '../../components/charts'
+import Collapse from '../../components/Collapse'
 import { SeverityTag, Tally, ViewTag } from '../../components/Ephemera'
 import { EmptyNotice, ErrorNotice, SkeletonRows } from '../../components/States'
 import { formatClock, formatInt, formatLogDate, formatLogTime, formatPercent, formatScore } from '../../lib/format'
@@ -35,7 +36,7 @@ function Explanation({ runId, rowIndex, evidenceLimit }: { runId: number; rowInd
   const nearest = evidence?.nearest_normal_example?.[0]
 
   return (
-    <div className="explain">
+    <div className="explain panel">
       <div className="explain__why">
         <h3>Why this line was flagged</h3>
         <p>
@@ -102,6 +103,21 @@ function Explanation({ runId, rowIndex, evidenceLimit }: { runId: number; rowInd
   )
 }
 
+/** The three view scores as three small bars in the view colours. */
+function ViewScores({ event }: { event: LogEvent }) {
+  const scores = { semantic: event.semantic_score, structural: event.structural_score, temporal: event.temporal_score }
+  return (
+    <span className="viewbars" role="img"
+      aria-label={Object.entries(scores).map(([view, score]) => `${viewCopy(view).name} ${formatScore(score, 2)}`).join(', ')}>
+      {Object.entries(scores).map(([view, score]) => (
+        <span key={view} className="viewbars__bar">
+          <span style={{ width: `${Math.max(Math.min(score, 1) * 100, 3)}%`, background: viewVar(view) }} />
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function EventRow({ runId, event, lines, evidenceLimit }: { runId: number; event: LogEvent; lines: number; evidenceLimit: string | null }) {
   const [open, setOpen] = useState(false)
   const panel = `event-${event.row_index}`
@@ -124,11 +140,11 @@ function EventRow({ runId, event, lines, evidenceLimit }: { runId: number; event
         </span>
         <span className="event__sev">
           <SeverityTag severity={event.severity} />
-          <span className="data muted">score {formatScore(event.final_score, 2)}</span>
+          <ViewScores event={event} />
         </span>
         <span className="event__toggle">{open ? 'Close' : 'Explain'}</span>
       </button>
-      {open && <div id={panel}><Explanation runId={runId} rowIndex={event.row_index} evidenceLimit={evidenceLimit} /></div>}
+      <Collapse open={open} id={panel}><Explanation runId={runId} rowIndex={event.row_index} evidenceLimit={evidenceLimit} /></Collapse>
     </li>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { severityVar, viewVar } from '../lib/vocabulary'
 import CountUp from '../reactbits/CountUp'
@@ -39,34 +39,16 @@ export function Barcode({ value, bars = 44 }: { value: string; bars?: number }) 
   )
 }
 
-const FLIP_INTERVAL_MS = 140
-
-/** Rows of 0 and 1 that fade in from the top; a few digits flip while visible. */
+/** Rows of 0 and 1 that fade in from the top and then stay still. */
 export function BinaryField({ seed, rows = 14, columns = 46 }: { seed: string; rows?: number; columns?: number }) {
-  const initial = useMemo(() => {
+  const cells = useMemo(() => {
     const random = seeded(seed)
     return Array.from({ length: rows * columns }, () => ({
       bit: random() > 0.5 ? '1' : '0',
       opacity: 0.12 + Math.floor(random() * 5) * 0.2,
     }))
   }, [seed, rows, columns])
-  const [cells, setCells] = useState(initial)
 
-  useEffect(() => setCells(initial), [initial])
-  useEffect(() => {
-    if (prefersReducedMotion()) return
-    const handle = window.setInterval(() => {
-      setCells((current) => {
-        const next = current.slice()
-        for (let n = 0; n < 6; n += 1) {
-          const i = Math.floor(Math.random() * next.length)
-          next[i] = { ...next[i], bit: next[i].bit === '1' ? '0' : '1' }
-        }
-        return next
-      })
-    }, FLIP_INTERVAL_MS)
-    return () => window.clearInterval(handle)
-  }, [])
 
   return (
     <div className="binary" aria-hidden="true">

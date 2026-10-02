@@ -1,6 +1,6 @@
 import { ClockCountdown, TextAa, TreeStructure } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../api/hooks'
 import type { Incident, Page, Run, RunDetail, TimelinePoint } from '../api/types'
@@ -9,21 +9,11 @@ import { Barcode, BinaryField, Count, prefersReducedMotion } from '../components
 import { EmptyNotice, ErrorNotice, SkeletonBlock, SkeletonLines, SkeletonRows } from '../components/States'
 import { formatInt, formatLogDate, formatLogTime, formatPercent, logSpan, serial } from '../lib/format'
 import { stageCopy, viewCopy, viewVar } from '../lib/vocabulary'
-import AnimatedContent from '../reactbits/AnimatedContent'
+import Reveal from '../components/Reveal'
 import SplitText from '../reactbits/SplitText'
 import '../styles/landing.css'
 
 const HEADLINE = 'Find the lines that do not belong'
-
-/** Scroll reveal that leaves content plainly visible when motion is not wanted. */
-function Reveal({ children }: { children: ReactNode }) {
-  if (prefersReducedMotion()) return <>{children}</>
-  return (
-    <AnimatedContent distance={48} duration={0.9} ease="power3.out" threshold={0.15}>
-      {children}
-    </AnimatedContent>
-  )
-}
 
 /** The run the page demonstrates with: the largest finished one. */
 function pickFeatured(runs: Run[]): Run | null {
@@ -73,12 +63,13 @@ function ViewRows({ detail }: { detail: RunDetail | null }) {
   const names = detail?.view_summary ? Object.keys(detail.view_summary) : Object.keys(VIEW_ICONS)
   return (
     <ul className="view-rows">
-      {names.map((view) => {
+      {names.map((view, index) => {
         const copy = viewCopy(view)
         const ViewIcon = VIEW_ICONS[view]
         const weight = detail?.view_summary?.[view]?.mean_weight
         return (
           <li key={view} className="view-row">
+            <Reveal className="view-row__grid" delay={index * 0.12}>
             <div className="stamp view-row__stamp" style={{ '--stamp-colour': viewVar(view) } as CSSProperties}>
               <div className="stamp__face">
                 {ViewIcon && <ViewIcon size={44} weight="fill" aria-hidden="true" />}
@@ -93,6 +84,7 @@ function ViewRows({ detail }: { detail: RunDetail | null }) {
               <p>{copy.catches}</p>
               <p className="muted">{copy.detector}.</p>
             </div>
+            </Reveal>
           </li>
         )
       })}
@@ -135,7 +127,7 @@ function Demo({ run }: { run: Run }) {
             </li>
           ))}
         </ul>
-        <Link to={`/runs/${run.id}`} className="btn btn--ghost">Read the full report</Link>
+        <Link to={`/runs/${run.id}`} className="btn btn--ghost">Open the dashboard</Link>
       </div>
     </div>
   )
@@ -155,7 +147,7 @@ export default function LandingPage() {
               <h1 className="display hero__title">{HEADLINE}</h1>
             ) : (
               <SplitText tag="h1" text={HEADLINE} className="display hero__title"
-                splitType="words" delay={60} duration={0.9} ease="power3.out" from={{ opacity: 0, y: 40 }}
+                splitType="words" delay={60} duration={0.7} ease="power3.out" from={{ opacity: 0, y: 24 }}
                 to={{ opacity: 1, y: 0 }} textAlign="left" />
             )}
             <p className="lede">
@@ -211,6 +203,8 @@ export default function LandingPage() {
               One pass, in a fixed order. The receipt you watch after uploading prints these same
               stages as they finish.
             </p>
+          </Reveal>
+          <div>
             <ol className="route">
               {ROUTE.map((leg) => (
                 <li key={leg.title} className="route__leg">
@@ -218,16 +212,18 @@ export default function LandingPage() {
                   <ol>
                     {leg.stages.map((stage) => (
                       <li key={stage}>
-                        <strong>{stageCopy(stage).label}</strong>
-                        <span className="route__lead" aria-hidden="true" />
-                        <span>{stageCopy(stage).detail}</span>
+                        <Reveal className="route__row" distance={16} duration={0.5}>
+                          <strong>{stageCopy(stage).label}</strong>
+                          <span className="route__lead" aria-hidden="true" />
+                          <span>{stageCopy(stage).detail}</span>
+                        </Reveal>
                       </li>
                     ))}
                   </ol>
                 </li>
               ))}
             </ol>
-          </Reveal>
+          </div>
         </div>
       </section>
 
@@ -246,7 +242,7 @@ export default function LandingPage() {
             )}
           </div>
           {runs.loading && <SkeletonLines widths={['80%', '60%']} />}
-          {featured && <Demo run={featured} />}
+          {featured && <Reveal><Demo run={featured} /></Reveal>}
           {runs.data && !featured && (
             <EmptyNotice title="Nothing to show yet">
               <p>No run has finished. Upload a log to create one.</p>
@@ -258,10 +254,10 @@ export default function LandingPage() {
 
       <section className="band">
         <div className="page band__split">
-          <div className="stack">
+          <Reveal className="stack">
             <h2 className="display">What it will not tell you</h2>
             <p className="lede">Worth knowing before you rely on it.</p>
-          </div>
+          </Reveal>
           <ul className="limits">
             <li><strong>One log format.</strong> It reads BlueGene/L (BGL) logs today.</li>
             <li><strong>Batch only.</strong> You upload a file and wait. It does not watch a live stream.</li>
@@ -274,7 +270,7 @@ export default function LandingPage() {
       <section className="band band--close">
         <div className="page">
           <BinaryField seed="admit one log" rows={5} columns={90} />
-          <div className="ticket ticket--paper close-ticket">
+          <Reveal><div className="ticket ticket--paper close-ticket">
             <div className="ticket__body">
               <h2 className="display">Have a log that looks wrong?</h2>
               <p className="lede">Hand it in. The receipt prints while the pipeline runs.</p>
@@ -283,7 +279,7 @@ export default function LandingPage() {
               <Barcode value="admit one log" bars={30} />
               <Link to="/upload" className="btn">Upload a log</Link>
             </div>
-          </div>
+          </div></Reveal>
         </div>
       </section>
     </>

@@ -37,6 +37,8 @@
 }
 
 .hero__ticket .binary {
+  opacity: 0.35;
+  animation: binary-in 1.8s ease-out both;
   position: absolute;
   inset: -3rem -8rem auto -2rem;
   height: 22rem;
@@ -202,7 +204,7 @@
   gap: var(--space-6);
 }
 
-.view-row {
+.view-row__grid {
   display: grid;
   grid-template-columns: 10rem minmax(0, 1fr);
   gap: var(--space-6);
@@ -267,7 +269,7 @@
   gap: var(--space-3);
 }
 
-.route__leg ol li {
+.route__row {
   display: grid;
   grid-template-columns: 13rem 3rem minmax(0, 1fr);
   align-items: baseline;
@@ -413,7 +415,7 @@
 }
 
 @media (max-width: 40rem) {
-  .view-row {
+  .view-row__grid {
     grid-template-columns: 6.5rem minmax(0, 1fr);
     gap: var(--space-4);
     align-items: start;
@@ -424,7 +426,7 @@
   .view-row__stamp .stamp__face {
     padding: var(--space-2);
   }
-  .route__leg ol li {
+  .route__row {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
@@ -453,5 +455,18 @@
   }
   .hero-ticket__until {
     margin-top: 0;
+  }
+}
+
+/* The binary texture settles in once and stays still. */
+@keyframes binary-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__ticket .binary {
+    animation: none;
   }
 }

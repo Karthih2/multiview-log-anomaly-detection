@@ -499,3 +499,10 @@ textarea,
 .skeleton {
   border-radius: var(--radius);
 }
+
+/* Very narrow phones: drop the wordmark's barcode so the masthead fits. */
+@media (max-width: 26rem) {
+  .wordmark span {
+    display: none;
+  }
+}
