@@ -1699,3 +1699,220 @@ table {
 .settings-box {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* ---------- Shapley waterfall ---------- */
+.shap {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.shap__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--step--1);
+}
+
+.shap__track {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.shap__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.shap__track {
+  position: relative;
+  height: 1.5rem;
+  background: var(--latte);
+  border: 1px solid var(--rule);
+}
+
+.shap__bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  transform-origin: left;
+  animation: bar-grow 0.6s var(--ease-out) both;
+}
+
+.shap__bar--up {
+  background: linear-gradient(90deg, var(--crimson-soft), var(--crimson));
+}
+
+.shap__bar--down {
+  background: linear-gradient(90deg, var(--peri), var(--peri-deep));
+}
+
+.shap__mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1px;
+  background: var(--ink-soft);
+}
+
+.shap__mark--final {
+  background: var(--ink);
+  width: 4px;
+}
+
+.shap__cutoff {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  border-left: 2px dashed var(--crimson);
+}
+
+.shap__value {
+  text-align: right;
+}
+
+.shap__value--up {
+  color: var(--crimson);
+  font-weight: 600;
+}
+
+.shap__value--down {
+  color: var(--peri-deep);
+  font-weight: 600;
+}
+
+.shap__note {
+  font-size: 0.8125rem;
+  color: var(--mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shap__bar {
+    animation: none;
+  }
+}
+
+/* ---------- Segmented control and the 2D cluster map ---------- */
+.seg {
+  display: inline-flex;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.seg__btn {
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  background: var(--paper);
+  border: 0;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.seg__btn + .seg__btn {
+  border-left: 2px solid var(--ink);
+}
+
+.seg__btn.is-on {
+  background: var(--crimson);
+  color: var(--latte);
+}
+
+.cmap {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cmap__box {
+  position: relative;
+  width: 100%;
+  background: var(--latte);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.cmap__cluster {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease;
+}
+
+.cmap__cluster.is-in {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 0.55s var(--ease-out), opacity 0.2s ease;
+  transition-delay: calc(var(--i) * 90ms), 0s;
+}
+
+.cmap__cluster.is-dim {
+  opacity: 0.28;
+}
+
+.cmap__dot {
+  cursor: pointer;
+  outline: none;
+}
+
+.cmap__dot:focus-visible {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.cmap__name {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  fill: var(--ink);
+}
+
+.cmap__count {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  fill: var(--ink-soft);
+}
+
+.cmap__tip {
+  position: absolute;
+  z-index: var(--z-tooltip);
+  transform: translate(-50%, calc(-100% - 14px));
+  display: grid;
+  gap: 0.15rem;
+  min-width: 13rem;
+  max-width: 18rem;
+  padding: var(--space-3);
+  background: var(--ink);
+  color: var(--latte);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  pointer-events: none;
+}
+
+.cmap__hint {
+  opacity: 0.7;
+}
+
+.cmap__note {
+  font-size: var(--step--1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmap__cluster,
+  .cmap__cluster.is-in {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+  .cmap__cluster.is-dim {
+    opacity: 0.28;
+  }
+}

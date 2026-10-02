@@ -1,15 +1,16 @@
 import { useApi } from '../../api/hooks'
 import type { EventDetail, LogEvent } from '../../api/types'
-import { BarList } from '../../components/charts'
-import { Tally, ViewTag } from '../../components/Ephemera'
+import ShapWaterfall from '../../components/Shap'
+import { Tally } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonRows } from '../../components/States'
-import { formatClock, formatLogTime, formatPercent, formatScore } from '../../lib/format'
-import { viewCopy, viewVar } from '../../lib/vocabulary'
+import { formatClock, formatLogTime, formatScore } from '../../lib/format'
+import { viewCopy } from '../../lib/vocabulary'
 import { useReport } from './ReportLayout'
 
 /** Why a line was flagged: each view's score, its weight, and what the two contribute together. */
 export default function Explanation({ runId, rowIndex, evidenceLimit }: { runId: number; rowIndex: number; evidenceLimit: string | null }) {
   const detail = useApi<EventDetail>(`/runs/${runId}/events/${rowIndex}`)
+  const baseline = useApi<Record<string, number>>(`/runs/${runId}/baseline`)
   const { run } = useReport()
   if (detail.loading) return <SkeletonRows rows={3} height="2rem" />
   if (detail.error) return <ErrorNotice error={detail.error} onRetry={detail.reload} />
@@ -33,19 +34,16 @@ export default function Explanation({ runId, rowIndex, evidenceLimit }: { runId:
   return (
     <div className="explain panel">
       <div className="explain__why">
-        <h3>Why this line was flagged</h3>
+        <h3>Why this line was flagged (Shapley values)</h3>
         <p>
           The <strong>{viewCopy(dominant.view).name.toLowerCase()}</strong> view contributed most.
           {' '}{viewCopy(dominant.view).catches}
         </p>
-        <BarList labelWidth="8.5rem" rows={parts.map((part) => ({
-          key: part.view,
-          label: <ViewTag view={part.view}>{viewCopy(part.view).name}</ViewTag>,
-          value: part.contribution,
-          display: formatScore(part.contribution),
-          colour: viewVar(part.view),
-          note: `score ${formatScore(part.score, 2)} x weight ${formatPercent(part.weight, 0)}`,
-        }))} />
+        {baseline.loading && <SkeletonRows rows={4} height="1.6rem" />}
+        {baseline.data && (
+          <ShapWaterfall threshold={event.threshold}
+            parts={parts.map((part) => ({ view: part.view, score: part.score, weight: part.weight, baseline: baseline.data![part.view] ?? 0 }))} />
+        )}
         <Tally rows={[
           { label: 'Final score', value: formatScore(event.final_score), note: 'The three contributions added together.' },
           ...(event.threshold != null

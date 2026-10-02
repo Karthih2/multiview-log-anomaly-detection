@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useApi, usePaged } from '../../api/hooks'
 import type { Cooccurrence, Incident, RootCauseCluster } from '../../api/types'
 import { BarList, ShareBar } from '../../components/charts'
+import ClusterMap from '../../components/ClusterMap'
 import Collapse from '../../components/Collapse'
 import { SeverityTag } from '../../components/Ephemera'
 import Reveal from '../../components/Reveal'
@@ -62,7 +63,7 @@ function ClusterRow({ cluster, index, total, maxIncidents, onOpen }: {
             <div className="cluster__members">
               <p className="caps">Largest incidents in this cluster</p>
               <ul>
-                {cluster.incidents.map((incident) => (
+                {cluster.incidents.slice(0, 8).map((incident) => (
                   <li key={incident.incident_id}>
                     <button type="button" className="link" onClick={() => onOpen(incident.incident_id)}>No. {incident.incident_id}</button>
                     <span className="data">{formatLogTime(incident.start_time)}</span>
@@ -100,7 +101,8 @@ function IncidentPick({ incident, active, onPick }: { incident: Incident; active
 export default function IncidentsSheet() {
   const { run, summary } = useReport()
   const [params, setParams] = useSearchParams()
-  const clusters = useApi<RootCauseCluster[]>(`/runs/${run.id}/root-cause-clusters`)
+  const clusters = useApi<RootCauseCluster[]>(`/runs/${run.id}/root-cause-clusters?members=40`)
+  const [mode, setMode] = useState<'table' | 'map'>('table')
   const pairs = useApi<Cooccurrence[]>(`/runs/${run.id}/cooccurrence`)
   const incidents = usePaged<Incident>(`/runs/${run.id}/incidents`, PAGE_SIZE)
   const chosen = params.get('incident')
@@ -128,7 +130,15 @@ export default function IncidentsSheet() {
 
       <div className="bento">
         <Tile title="Root-cause clusters" span={12}
-          hint="Incidents grouped by the component ranked most likely to be their origin, largest cluster first.">
+          hint="Incidents grouped by the component ranked most likely to be their origin, largest cluster first."
+          action={
+            <div className="seg no-print" role="group" aria-label="Cluster view">
+              <button type="button" className={mode === 'table' ? 'seg__btn is-on' : 'seg__btn'} aria-pressed={mode === 'table'}
+                onClick={() => setMode('table')}>Table</button>
+              <button type="button" className={mode === 'map' ? 'seg__btn is-on' : 'seg__btn'} aria-pressed={mode === 'map'}
+                onClick={() => setMode('map')}>2D map</button>
+            </div>
+          }>
           {clusters.loading && <SkeletonRows rows={5} height="3rem" />}
           {clusters.error && <ErrorNotice error={clusters.error} onRetry={clusters.reload} />}
           {clusters.data && !list.length && <EmptyNotice title="No clusters"><p>No incident was ranked in this run.</p></EmptyNotice>}
@@ -141,6 +151,10 @@ export default function IncidentsSheet() {
                   colour: CLUSTER_COLOURS[i % CLUSTER_COLOURS.length],
                 }))} />
               </div>
+              {mode === 'map' && (
+                <ClusterMap clusters={list} colours={CLUSTER_COLOURS} totalIncidents={summary.n_incidents} onOpen={open} />
+              )}
+              {mode === 'table' && (
               <div className="table-scroll">
                 <table className="clusters">
                   <thead>
@@ -163,9 +177,12 @@ export default function IncidentsSheet() {
                   </tbody>
                 </table>
               </div>
-              <p className="muted cluster__note">
-                Avg severity and origin score run from 0 to 1. Origin score is how strongly the ranking favours this component.
-              </p>
+              )}
+              {mode === 'table' && (
+                <p className="muted cluster__note">
+                  Avg severity and origin score run from 0 to 1. Origin score is how strongly the ranking favours this component.
+                </p>
+              )}
             </>
           )}
         </Tile>
