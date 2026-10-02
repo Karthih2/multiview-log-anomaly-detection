@@ -279,3 +279,8 @@
   background: var(--swatch, currentColor);
   flex: none;
 }
+
+/* Stamp captions sit on a coloured face: they take the paper colour, not the muted grey. */
+.stamp__face .caps {
+  color: var(--paper);
+}

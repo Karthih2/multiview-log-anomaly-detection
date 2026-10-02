@@ -1,3 +1,4 @@
+import { CalendarBlank, ChartLineUp, Fire, Flag, Hash, Printer, Stack } from '@phosphor-icons/react'
 import { Navigate, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 import { useApi } from '../../api/hooks'
 import type { RunDetail, RunSummary } from '../../api/types'
@@ -34,12 +35,13 @@ export default function ReportLayout() {
     ? { run: run.data, summary: summary.data }
     : null
   const sheets = [
-    { to: '.', label: 'Dashboard', end: true },
-    { to: 'incidents', label: 'Incidents' },
-    { to: 'events', label: 'Flagged lines' },
-    { to: 'views', label: 'Three views' },
-    { to: 'checks', label: 'Templates & drift' },
-    { to: 'summary', label: 'Printable summary' },
+    { to: '.', label: 'Overview', end: true, icon: ChartLineUp },
+    { to: 'when', label: 'When and where', icon: CalendarBlank },
+    { to: 'incidents', label: 'Incidents', icon: Fire },
+    { to: 'views', label: 'Three views', icon: Stack },
+    { to: 'events', label: 'Flagged lines', icon: Flag },
+    { to: 'templates', label: 'Templates', icon: Hash },
+    { to: 'summary', label: 'Printable summary', icon: Printer },
   ]
 
   return (
@@ -47,6 +49,7 @@ export default function ReportLayout() {
       <aside className="report__rail no-print">
         {run.data ? (
           <>
+            <p className="caps">Run</p>
             <p className="report__name">{run.data.name}</p>
             {run.data.time_start && run.data.time_end && (
               <p className="muted report__span">
@@ -61,7 +64,7 @@ export default function ReportLayout() {
           <ul>
             {sheets.map((sheet) => (
               <li key={sheet.to}>
-                <NavLink to={sheet.to} end={sheet.end}>{sheet.label}</NavLink>
+                <NavLink to={sheet.to} end={sheet.end}><sheet.icon size={18} weight="duotone" aria-hidden="true" />{sheet.label}</NavLink>
               </li>
             ))}
           </ul>

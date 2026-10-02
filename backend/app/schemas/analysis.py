@@ -29,11 +29,33 @@ class IncidentOut(OrmModel):
     start_time: datetime
     end_time: datetime
     top_root_cause: str | None = None
+    peak_severity: str | None = None
 
 
 class IncidentDetail(IncidentOut):
     template_counts: dict[str, int]
     root_cause_candidates: list[RootCauseCandidateOut]
+
+
+class ClusterIncident(BaseModel):
+    incident_id: int
+    start_time: datetime
+    n_anomalies: int
+
+
+class RootCauseCluster(BaseModel):
+    """Incidents whose top-ranked root-cause candidate is the same component."""
+    component: str
+    n_incidents: int
+    n_anomalies: int
+    avg_root_cause_score: float
+    avg_severity: float
+    first_time: datetime
+    last_time: datetime
+    # Other components that failed alongside it, most frequent first.
+    co_components: list[str]
+    # The cluster's largest incidents.
+    incidents: list[ClusterIncident]
 
 
 class RootCauseCount(BaseModel):
@@ -59,6 +81,7 @@ class DriftWindowOut(OrmModel):
 class DriftSignalOut(BaseModel):
     signal: str
     first_flagged_row: int | None
+    first_flagged_time: datetime | None = None
     control_test: dict[str, float]
     windows: list[DriftWindowOut]
 

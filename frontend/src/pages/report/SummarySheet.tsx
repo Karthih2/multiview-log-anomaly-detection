@@ -1,6 +1,6 @@
 import { useApi } from '../../api/hooks'
 import type { ComponentRisk, Incident, Page, RootCauseCount } from '../../api/types'
-import { Barcode, Tally } from '../../components/Ephemera'
+import { Tally } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonRows } from '../../components/States'
 import { formatInt, formatLogDate, formatLogTime, formatPercent, logSpan, serial } from '../../lib/format'
 import { bySeverity, viewCopy } from '../../lib/vocabulary'
@@ -39,10 +39,9 @@ export default function SummarySheet() {
         </div>
         <div className="summary__serial">
           {run.finished_at && (
-            <p className="inkmark">Processed<small>{formatLogDate(run.finished_at)}</small></p>
+            <p className="muted">Processed {formatLogDate(run.finished_at)}</p>
           )}
           <span className="data">Run No. {serial(run.id)}</span>
-          <Barcode value={`run-${run.id}-${run.created_at}`} bars={30} />
         </div>
       </header>
 

@@ -150,6 +150,14 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
         {width > 0 && (
           <svg width={width} height={CHART_HEIGHT} role="img"
             aria-label={`Flagged anomalies per ${bucket} from ${bucketLabel(days[0]?.date ?? '')} to ${bucketLabel(days[days.length - 1]?.date ?? '')}, stacked by severity. A table follows.`}>
+            <defs>
+              {severities.map((severity) => (
+                <linearGradient key={severity} id={`sevgrad-${severity}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={severityVar(severity)} />
+                  <stop offset="100%" stopColor={severityVar(severity)} stopOpacity="0.55" />
+                </linearGradient>
+              ))}
+            </defs>
             <g transform={`translate(${MARGIN.left},${MARGIN.top})`}>
               {ticks.map((tick) => (
                 <g key={tick} transform={`translate(0,${y(tick)})`}>
@@ -173,7 +181,7 @@ export function TimelineChart({ points, bucket = 'day' }: { points: TimelinePoin
                       base += count
                       return (
                         <rect key={severity} x={gap / 2} y={y1} width={Math.max(band - gap, 0.5)}
-                          height={Math.max(height - (height > 3 ? 1 : 0), 0.5)} fill={severityVar(severity)} />
+                          height={Math.max(height - (height > 3 ? 1 : 0), 0.5)} fill={`url(#sevgrad-${severity})`} />
                       )
                     })}
                     </g>
@@ -255,7 +263,7 @@ export function BarList({ rows, max, labelWidth = '9rem', stacked = false }: {
           <span className="bars__track">
             <span className="bars__bar" style={{
               '--ratio': top > 0 ? row.value / top : 0,
-              background: row.colour ?? 'var(--wine)',
+              '--bar': row.colour ?? 'var(--view-semantic)',
             } as CSSProperties} />
             <span className="bars__value num">{row.display ?? formatInt(row.value)}</span>
           </span>
@@ -272,7 +280,7 @@ export function ShareBar({ parts }: { parts: { key: string; label: string; share
     <div className="share" role="img"
       aria-label={parts.map((p) => `${p.label} ${(p.share * 100).toFixed(0)} percent`).join(', ')}>
       {parts.map((part) => (
-        <span key={part.key} className="share__part" style={{ flexGrow: part.share, background: part.colour }}>
+        <span key={part.key} className="share__part" style={{ flexGrow: part.share, '--bar': part.colour } as CSSProperties}>
           <span className="share__label">{part.label}</span>
           <span className="num">{(part.share * 100).toFixed(0)}%</span>
         </span>
@@ -320,7 +328,7 @@ export function DriftChart({ signal, trainEnd }: { signal: DriftSignal; trainEnd
             ))}
             {windows.filter((w) => w.drift_flagged).map((w) => (
               <rect key={w.window_start} x={x(w.window_start)} y={innerHeight + 3}
-                width={Math.max(x(w.window_end) - x(w.window_start) - 1, 1)} height={4} fill="var(--wine)" />
+                width={Math.max(x(w.window_end) - x(w.window_start) - 1, 1)} height={4} fill="var(--alert)" />
             ))}
             {trainEnd !== null && trainEnd < lastRow && (
               <g transform={`translate(${x(trainEnd)},0)`}>

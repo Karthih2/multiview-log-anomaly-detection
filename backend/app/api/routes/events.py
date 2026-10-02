@@ -1,12 +1,12 @@
 """Anomaly timeline, per-component risk, flagged events, evidence and templates."""
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from app.api.deps import CompletedRun, DbSession, Paging
 from app.db.models import EvidencePackage, LogEvent, Template
 from app.schemas.common import Page
 from app.schemas.events import (AnomalyKind, ComponentRisk, EventDetail, EventOut, EvidenceOut,
-                                TemplateOut, TimeBucket, TimelinePoint)
+                                ScoreBucket, TemplateOut, TimeBucket, TimelinePoint)
 
 router = APIRouter(prefix="/runs/{run_id}", tags=["events"])
 
@@ -36,6 +36,50 @@ def anomaly_timeline(run: CompletedRun, db: DbSession, bucket: TimeBucket = Time
         .group_by(LogEvent.severity, day)).all()
     points = [TimelinePoint(date=str(d), severity=severity, count=count) for d, severity, count in rows]
     return sorted(points, key=lambda point: (point.date, point.severity))
+
+
+# A finished run never changes, so its slices are computed once per process.
+_SCORE_CACHE: dict[tuple[int, int], list[ScoreBucket]] = {}
+
+
+@router.get("/score-timeline", response_model=list[ScoreBucket])
+def score_timeline(run: CompletedRun, db: DbSession, points: int = 120):
+    """The log cut into equal slices by line order (lines are time-sorted): worst fused
+    score, mean cutoff and flagged count per slice, for the headline score chart."""
+    points = max(10, min(points, 400))
+    if (run.id, points) in _SCORE_CACHE:
+        return _SCORE_CACHE[run.id, points]
+    total = run.total_rows or 1
+    slot = (LogEvent.row_index * points // total).label("slot")
+    rows = db.execute(
+        select(slot, func.min(LogEvent.row_index), func.min(LogEvent.time), func.max(LogEvent.final_score),
+               func.avg(LogEvent.threshold), func.sum(case((LogEvent.is_anomaly, 1), else_=0)))
+        .where(LogEvent.run_id == run.id).group_by(slot).order_by(slot)).all()
+    buckets = [ScoreBucket(row_start=start, time=time, max_score=top, mean_threshold=cut, n_anomalies=int(n or 0))
+               for _, start, time, top, cut, n in rows]
+    _SCORE_CACHE[run.id, points] = buckets
+    return buckets
+
+
+# Typical normal-line score per view, once per finished run.
+_BASELINE_CACHE: dict[int, dict[str, float]] = {}
+
+
+@router.get("/baseline", response_model=dict[str, float])
+def view_baseline(run: CompletedRun, db: DbSession):
+    """Average score of each view over the lines that were not flagged: the reference point
+    the Shapley attribution of a flagged line is measured against."""
+    if run.id not in _BASELINE_CACHE:
+        row = db.execute(
+            select(func.avg(LogEvent.semantic_score), func.avg(LogEvent.structural_score),
+                   func.avg(LogEvent.temporal_score))
+            .where(LogEvent.run_id == run.id, LogEvent.is_anomaly.is_(False))).one()
+        if row[0] is None:  # every line was flagged: fall back to all lines
+            row = db.execute(
+                select(func.avg(LogEvent.semantic_score), func.avg(LogEvent.structural_score),
+                       func.avg(LogEvent.temporal_score)).where(LogEvent.run_id == run.id)).one()
+        _BASELINE_CACHE[run.id] = dict(zip(("semantic", "structural", "temporal"), (float(v or 0) for v in row)))
+    return _BASELINE_CACHE[run.id]
 
 
 @router.get("/components", response_model=list[ComponentRisk])

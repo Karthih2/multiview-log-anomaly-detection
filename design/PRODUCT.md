@@ -1,3 +1,20 @@
+## Direction update, 2 Oct 2026 (supersedes the older brand rules below where they differ)
+
+Back to the printed ticket, stamp and receipt look, with a new palette and a conventional dashboard inside it.
+
+- **Palette, by importance:** Primal Crimson `#940501` (actions, key figures, severity), Cloudlight Periwinkle `#95BBEA` (secondary, chart areas, info), Latte Silk `#FFF8E6` (the ground). Tints and shades of these only. Ink is a warm dark brown `#2A1514`, never black. No dark theme.
+- **Background:** the latte ground with a soft periwinkle-to-crimson wash that drifts slowly. No orbs, no dot grids.
+- **Views:** periwinkle blue `#2A5DBA`, green `#0E8A6A`, ochre `#B7791A` (validated together, all pairs). Always named beside the colour.
+- **Severity:** a crimson ramp from light rose to deep crimson, always with its word.
+- **Shapes:** ticket (hero, upload), receipt (live progress), stamps (three views), ink stamp, barcode. Small radius: 6px, 4px on chips, 0 on charts and table cells.
+- **Type:** Archivo in capitals for titles, IBM Plex Sans for text, IBM Plex Mono for figures and log lines.
+- **Dashboard:** five numbered groups (Overview, When and where, Incidents, The three views, Every flagged line), each with a one-line purpose.
+- **Motion:** React Bits (SplitText, AnimatedContent, DecryptedText, LetterGlitch in binary digits). Plays once on scroll-in except the ambient background and the progress meter. All off under `prefers-reduced-motion`. No custom cursor. Hover changes are instant.
+- **Never:** harsh gradients, lucide icons, pure white, rainbow colouring, drop shadows, feature cards in a row, emoji, liquid glass, em dashes, Inter/Geist/Space Grotesk, terminal windows, fake testimonials, bento grids, "it's not x, it's y" copy, checkmark bullets, pricing tiers, soft or pill corners, purple and black, radial orbs, dot grids, sparkle icons, animated arrows, coloured left stripes, basic pastels.
+- **Must have:** a real product demo, skeleton loaders, Terms of service, Privacy policy.
+
+---
+
 # Product
 
 <!-- impeccable:product-schema 1 -->

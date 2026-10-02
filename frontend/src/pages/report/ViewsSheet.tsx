@@ -91,8 +91,9 @@ export default function ViewsSheet() {
 
       {settings.length > 0 && (
         <Reveal>
-          <section className="dash__section">
+          <section className="settings-box">
             <h2>Settings this run used</h2>
+            <p>Stored with the run, so every figure can be reproduced.</p>
             <Tally rows={settings} />
           </section>
         </Reveal>

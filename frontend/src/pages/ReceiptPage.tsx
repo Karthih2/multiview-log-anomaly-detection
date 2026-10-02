@@ -1,9 +1,11 @@
 import { Check, X } from '@phosphor-icons/react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useNow, useRun } from '../api/hooks'
 import type { RunDetail } from '../api/types'
-import { Barcode } from '../components/Ephemera'
-import { ErrorNotice, SkeletonBlock, SkeletonLines } from '../components/States'
+import { Barcode, Count, prefersReducedMotion } from '../components/Ephemera'
+import GlitchField from '../components/GlitchField'
+import { ErrorNotice, SkeletonBlock } from '../components/States'
 import { formatDuration, formatInt, parseServerTime, serial } from '../lib/format'
 import { stageCopy } from '../lib/vocabulary'
 import DecryptedText from '../reactbits/DecryptedText'
@@ -16,6 +18,9 @@ interface Line {
   state: LineState
   elapsedMs: number | null
 }
+
+/** How long the finished screen shows before it opens the dashboard on its own. */
+const REDIRECT_SECONDS = 3
 
 /** Turn the backend's planned stages and stage log into receipt lines. */
 function buildLines(run: RunDetail, now: number): Line[] {
@@ -46,16 +51,13 @@ function Mark({ state }: { state: LineState }) {
 
 const STATE_WORD: Record<LineState, string> = { pending: 'waiting', running: 'in progress', done: 'done', failed: 'failed' }
 
-function Receipt({ run }: { run: RunDetail }) {
-  const active = run.status === 'queued' || run.status === 'running'
-  const now = useNow(active)
-  const lines = buildLines(run, now)
+function Receipt({ run, lines, now }: { run: RunDetail; lines: Line[]; now: number }) {
   const startedAt = run.started_at ? parseServerTime(run.started_at) : null
   const endedAt = run.finished_at ? parseServerTime(run.finished_at) : now
   const doneCount = lines.filter((line) => line.state === 'done').length
 
   return (
-    <div className="receipt receipt--feed" aria-live="polite">
+    <div className="receipt receipt--feed process__receipt" aria-live="polite">
       <header className="receipt__head">
         <p className="display receipt__brand">LogSight</p>
         <p>Run No. {serial(run.id)}</p>
@@ -63,10 +65,11 @@ function Receipt({ run }: { run: RunDetail }) {
       </header>
       <hr className="receipt__dash" />
       <ol className="receipt__lines">
-        {lines.map((line) => {
+        {lines.map((line, i) => {
           const copy = stageCopy(line.stage)
           return (
-            <li key={line.stage} className={`receipt-line receipt-line--${line.state}`}>
+            <li key={line.stage} className={`receipt-line receipt-line--${line.state}`}
+              style={{ animationDelay: `${i * 70}ms` }}>
               <Mark state={line.state} />
               <span className="receipt-line__label">
                 {line.state === 'running' ? (
@@ -75,6 +78,7 @@ function Receipt({ run }: { run: RunDetail }) {
                   copy.label
                 )}
                 <span className="sr-only">, {STATE_WORD[line.state]}</span>
+                {line.state === 'running' && <span className="receipt-line__detail">{copy.detail}</span>}
               </span>
               <span className="receipt-line__time">
                 {line.elapsedMs === null ? '' : formatDuration(line.elapsedMs)}
@@ -97,11 +101,15 @@ function Receipt({ run }: { run: RunDetail }) {
           <>
             <div>
               <dt>Lines read</dt>
-              <dd>{formatInt(run.total_rows)}</dd>
+              <dd><Count to={run.total_rows ?? 0} duration={0.8} /></dd>
             </div>
             <div>
               <dt>Flagged</dt>
-              <dd>{formatInt(run.n_anomalies)}</dd>
+              <dd><Count to={run.n_anomalies ?? 0} duration={0.8} /></dd>
+            </div>
+            <div>
+              <dt>Incidents</dt>
+              <dd><Count to={run.n_incidents ?? 0} duration={0.8} /></dd>
             </div>
           </>
         )}
@@ -116,42 +124,68 @@ function Receipt({ run }: { run: RunDetail }) {
   )
 }
 
-function Status({ run }: { run: RunDetail }) {
-  if (run.status === 'completed') {
-    return (
-      <>
-        <h1 className="display">Your report is ready</h1>
-        <p className="lede">
-          {formatInt(run.total_rows)} lines read, {formatInt(run.n_anomalies)} flagged,
-          grouped into {formatInt(run.n_incidents)} incidents.
-        </p>
-        <Link to={`/runs/${run.id}`} className="btn">Open the report</Link>
-      </>
-    )
-  }
-  if (run.status === 'failed') {
-    return (
-      <>
-        <h1 className="display">This run stopped</h1>
-        <div className="notice notice--error" role="alert">
-          <h2>What went wrong</h2>
-          <p className="data">{run.error ?? 'The pipeline stopped without reporting a reason.'}</p>
-        </div>
-        <p>Check that the file is a raw BGL log, then upload it again.</p>
-        <Link to="/upload" className="btn">Upload again</Link>
-      </>
-    )
-  }
+function Process({ run }: { run: RunDetail }) {
+  const navigate = useNavigate()
+  const active = run.status === 'queued' || run.status === 'running'
+  const now = useNow(active)
+  const lines = buildLines(run, now)
+  const doneCount = lines.filter((line) => line.state === 'done').length
+  const running = lines.some((line) => line.state === 'running')
+  const percent = run.status === 'completed' ? 100 : lines.length ? ((doneCount + (running ? 0.5 : 0)) / lines.length) * 100 : 0
+  const [left, setLeft] = useState(REDIRECT_SECONDS)
+
+  // Finished: count down, then open the dashboard.
+  useEffect(() => {
+    if (run.status !== 'completed') return
+    const target = `/runs/${run.id}`
+    if (prefersReducedMotion()) { navigate(target, { replace: true }); return }
+    const tick = window.setInterval(() => setLeft((n) => Math.max(0, n - 1)), 1000)
+    const go = window.setTimeout(() => navigate(target, { replace: true }), REDIRECT_SECONDS * 1000)
+    return () => { window.clearInterval(tick); window.clearTimeout(go) }
+  }, [run.status, run.id, navigate])
+
   const copy = run.stage ? stageCopy(run.stage) : null
+  const headline = run.status === 'completed' ? 'Your report is ready'
+    : run.status === 'failed' ? 'This run stopped'
+      : run.status === 'queued' ? 'Waiting in line' : 'Reading your log'
+  const detail = run.status === 'completed'
+    ? `${formatInt(run.total_rows)} lines read, ${formatInt(run.n_anomalies)} flagged, grouped into ${formatInt(run.n_incidents)} incidents.`
+    : run.status === 'failed' ? 'Check that the file is a raw BGL log, then upload it again.'
+      : copy ? `${copy.label}. ${copy.detail}` : 'The pipeline starts as soon as the previous run finishes.'
+
   return (
     <>
-      <h1 className="display">{run.status === 'queued' ? 'Waiting in line' : 'Reading your log'}</h1>
-      <p className="lede">
-        {copy ? `${copy.label}. ${copy.detail}` : 'The pipeline starts as soon as the previous run finishes.'}
-      </p>
-      <p className="muted">
-        You can leave this page. The run continues on the server and stays under Runs.
-      </p>
+      <header className="process__head">
+        <p className="caps">Run No. {serial(run.id)}</p>
+        <h1 className="display process__headline">{headline}</h1>
+        <p className="lede process__detail">{detail}</p>
+      </header>
+
+      <div className="process__meter" role="progressbar" aria-valuemin={0} aria-valuemax={100}
+        aria-valuenow={Math.round(percent)} aria-label="Pipeline progress">
+        <span className="process__meter-fill" style={{ width: `${percent}%` }} />
+        <span className="process__meter-label num">{Math.round(percent)}%</span>
+      </div>
+
+      <Receipt run={run} lines={lines} now={now} />
+
+      {run.status === 'completed' && (
+        <div className="process__go">
+          <span className="process__countdown" aria-hidden="true"><span style={{ animationDuration: `${REDIRECT_SECONDS}s` }} /></span>
+          <Link to={`/runs/${run.id}`} replace className="btn">Open the dashboard now</Link>
+          <p className="muted">Opening your dashboard in {left} s</p>
+        </div>
+      )}
+      {run.status === 'failed' && (
+        <div className="process__go">
+          <div className="notice notice--error" role="alert">
+            <h2>What went wrong</h2>
+            <p className="data">{run.error ?? 'The pipeline stopped without reporting a reason.'}</p>
+          </div>
+          <Link to="/upload" className="btn">Upload again</Link>
+        </div>
+      )}
+      {active && <p className="muted process__hint">You can leave this page. The run continues on the server and stays under Runs.</p>}
     </>
   )
 }
@@ -161,16 +195,14 @@ export default function ReceiptPage() {
   const { run, error } = useRun(runId)
 
   return (
-    <div className="page receipt-page">
-      <div className="receipt-page__status stack">
-        {run ? <Status run={run} /> : error ? (
+    <div className="process">
+      <GlitchField full speed={60} />
+      <div className="process__inner">
+        {run ? <Process run={run} /> : error ? (
           <ErrorNotice error={error} title="This run could not be loaded" />
         ) : (
-          <SkeletonLines widths={['70%', '90%', '55%']} />
+          <SkeletonBlock height="34rem" width="min(30rem, 100%)" />
         )}
-      </div>
-      <div className="receipt-page__paper">
-        {run ? <Receipt run={run} /> : !error && <SkeletonBlock height="34rem" />}
       </div>
     </div>
   )

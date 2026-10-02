@@ -131,6 +131,7 @@ export interface Incident {
   start_time: string
   end_time: string
   top_root_cause: string | null
+  peak_severity: string | null
 }
 
 export interface RootCauseCandidate {
@@ -174,6 +175,28 @@ export interface DriftWindow {
 export interface DriftSignal {
   signal: string
   first_flagged_row: number | null
+  first_flagged_time: string | null
   control_test: Record<string, number>
   windows: DriftWindow[]
+}
+
+/** One slice of the log in time order, for the headline score chart. */
+export interface ScoreBucket {
+  row_start: number
+  time: string
+  max_score: number
+  mean_threshold: number | null
+  n_anomalies: number
+}
+
+export interface RootCauseCluster {
+  component: string
+  n_incidents: number
+  n_anomalies: number
+  avg_root_cause_score: number
+  avg_severity: number
+  first_time: string
+  last_time: string
+  co_components: string[]
+  incidents: { incident_id: number; start_time: string; n_anomalies: number }[]
 }
