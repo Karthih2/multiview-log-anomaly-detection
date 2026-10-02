@@ -158,19 +158,6 @@
   letter-spacing: 0.25em;
 }
 
-.hero-ticket__auc {
-  display: block;
-  font-size: var(--step-4);
-  font-weight: 900;
-}
-
-.hero-ticket__auc-label {
-  display: block;
-  font-size: var(--step--1);
-  line-height: 1.35;
-  margin-top: var(--space-1);
-}
-
 .hero-ticket__link {
   font-weight: 700;
   color: inherit;

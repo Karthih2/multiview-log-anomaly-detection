@@ -62,7 +62,3 @@ class DriftSignalOut(BaseModel):
     control_test: dict[str, float]
     windows: list[DriftWindowOut]
 
-
-class MetricOut(OrmModel):
-    scope: str
-    metrics: dict[str, Any]

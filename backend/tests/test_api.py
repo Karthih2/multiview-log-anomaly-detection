@@ -15,7 +15,6 @@ def test_run_summary(client, run_id):
     assert body["anomaly_rate"] == 0.5
     assert body["n_incidents"] == 2
     assert body["severity_counts"] == {"CRITICAL": 1, "LOW": 1, "MEDIUM": 1}
-    assert body["test_metrics"] == {"precision": 0.5, "recall": 1.0}
 
 
 def test_run_detail_keeps_raw_row_count(client, run_id):
@@ -103,14 +102,12 @@ def test_root_cause_summary_and_empty_cooccurrence(client, run_id):
     assert client.get(f"{API}/runs/{run_id}/cooccurrence").json() == []
 
 
-def test_drift_evaluation_templates_evidence(client, run_id):
+def test_drift_templates_evidence(client, run_id):
     drift = client.get(f"{API}/runs/{run_id}/drift").json()
     assert drift[0]["signal"] == "embedding"
     assert drift[0]["first_flagged_row"] is None
     assert len(drift[0]["windows"]) == 1
 
-    assert client.get(f"{API}/runs/{run_id}/evaluation").json() == [
-        {"scope": "test", "metrics": {"precision": 0.5, "recall": 1.0}}]
     templates = client.get(f"{API}/runs/{run_id}/templates").json()
     assert [t["template_id"] for t in templates["items"]] == [1, 2]
     assert client.get(f"{API}/runs/{run_id}/evidence").json()["total"] == 1

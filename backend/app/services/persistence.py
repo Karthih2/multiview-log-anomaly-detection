@@ -9,7 +9,7 @@ from app.db import models
 from app.pipeline.experiment import view_names
 from app.pipeline.result import PipelineResult
 
-EVENT_SOURCE_COLUMNS = ["label", "timestamp", "time", "node", "type", "component",
+EVENT_SOURCE_COLUMNS = ["timestamp", "time", "node", "type", "component",
                         "level", "content", "template_id"]
 
 
@@ -88,10 +88,6 @@ def save_result(session: Session, run: models.PipelineRun, result: PipelineResul
             dominant_view=package["dominant_contributing_view"], package=package,
         )
         for package in result.evidence
-    )
-    session.add_all(
-        models.EvaluationMetric(run_id=run.id, scope=scope, metrics=metrics)
-        for scope, metrics in result.metrics.items()
     )
 
     n_incidents = 0

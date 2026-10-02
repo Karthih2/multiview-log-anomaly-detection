@@ -54,7 +54,7 @@ export default function UploadPage() {
         <ul className="plain-list muted">
           <li>Format: raw BGL log lines, one event per line.</li>
           <li>Around a minute for tens of thousands of lines. Larger files take longer.</li>
-          <li>No labels are needed. If the log has them, you also get accuracy figures.</li>
+          <li>No labels are needed.</li>
         </ul>
       </div>
 

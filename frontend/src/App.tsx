@@ -5,7 +5,6 @@ import { NotFoundPage, PrivacyPage, TermsPage } from './pages/LegalPages'
 import ReceiptPage from './pages/ReceiptPage'
 import RunsPage from './pages/RunsPage'
 import UploadPage from './pages/UploadPage'
-import AccuracySheet from './pages/report/AccuracySheet'
 import ChecksSheet from './pages/report/ChecksSheet'
 import EventsSheet from './pages/report/EventsSheet'
 import IncidentsSheet from './pages/report/IncidentsSheet'
@@ -29,7 +28,6 @@ export default function App() {
             <Route path="incidents" element={<IncidentsSheet />} />
             <Route path="events" element={<EventsSheet />} />
             <Route path="checks" element={<ChecksSheet />} />
-            <Route path="accuracy" element={<AccuracySheet />} />
             <Route path="summary" element={<SummarySheet />} />
           </Route>
           <Route path="terms" element={<TermsPage />} />

@@ -1,6 +1,6 @@
 import { Navigate, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 import { useApi } from '../../api/hooks'
-import type { MetricScope, RunDetail, RunSummary } from '../../api/types'
+import type { RunDetail, RunSummary } from '../../api/types'
 import { Barcode } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonBlock, SkeletonLines } from '../../components/States'
 import { formatLogDate, serial } from '../../lib/format'
@@ -9,7 +9,6 @@ import '../../styles/report.css'
 export interface ReportContext {
   run: RunDetail
   summary: RunSummary
-  evaluation: MetricScope[]
 }
 
 export const useReport = () => useOutletContext<ReportContext>()
@@ -19,22 +18,21 @@ export default function ReportLayout() {
   const run = useApi<RunDetail>(`/runs/${runId}`)
   const completed = run.data?.status === 'completed'
   const summary = useApi<RunSummary>(completed ? `/runs/${runId}/summary` : null)
-  const evaluation = useApi<MetricScope[]>(completed ? `/runs/${runId}/evaluation` : null)
 
   if (run.data && !completed) return <Navigate to={`/runs/${runId}/receipt`} replace />
 
-  const error = run.error ?? summary.error ?? evaluation.error
+  const error = run.error ?? summary.error
   if (error) {
     return (
       <div className="page report-missing">
         <ErrorNotice error={error} title="This report could not be loaded"
-          onRetry={() => { run.reload(); summary.reload(); evaluation.reload() }} />
+          onRetry={() => { run.reload(); summary.reload() }} />
       </div>
     )
   }
 
-  const context: ReportContext | null = run.data && summary.data && evaluation.data
-    ? { run: run.data, summary: summary.data, evaluation: evaluation.data }
+  const context: ReportContext | null = run.data && summary.data
+    ? { run: run.data, summary: summary.data }
     : null
   const sheets = [
     { to: '.', label: 'Overview', end: true },
@@ -42,7 +40,6 @@ export default function ReportLayout() {
     { to: 'incidents', label: 'Incidents' },
     { to: 'events', label: 'Flagged lines' },
     { to: 'checks', label: 'Templates and drift' },
-    ...(evaluation.data?.length ? [{ to: 'accuracy', label: 'Accuracy' }] : []),
     { to: 'summary', label: 'Printable summary' },
   ]
 

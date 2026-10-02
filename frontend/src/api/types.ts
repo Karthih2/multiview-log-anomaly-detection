@@ -45,17 +45,6 @@ export interface RunDetail extends Run {
   detectors: Record<string, Record<string, string | number | boolean>> | null
 }
 
-export interface Metrics {
-  precision?: number
-  recall?: number
-  f1?: number
-  auc_roc?: number | null
-  auc_pr?: number
-  n_test_rows?: number
-  n_true_anomalies?: number
-  n_flagged?: number
-}
-
 export interface RunSummary {
   run_id: number
   total_rows: number
@@ -66,7 +55,6 @@ export interface RunSummary {
   time_start: string
   time_end: string
   severity_counts: Record<string, number>
-  test_metrics: Metrics | null
 }
 
 export interface Page<T> {
@@ -188,9 +176,4 @@ export interface DriftSignal {
   first_flagged_row: number | null
   control_test: Record<string, number>
   windows: DriftWindow[]
-}
-
-export interface MetricScope {
-  scope: string
-  metrics: Metrics
 }

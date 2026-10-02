@@ -3,11 +3,11 @@ import type { Icon } from '@phosphor-icons/react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../api/hooks'
-import type { Incident, Page, Run, RunDetail, RunSummary, TimelinePoint } from '../api/types'
+import type { Incident, Page, Run, RunDetail, TimelinePoint } from '../api/types'
 import { chooseBucket, TimelineChart } from '../components/charts'
 import { Barcode, BinaryField, Count, prefersReducedMotion } from '../components/Ephemera'
 import { EmptyNotice, ErrorNotice, SkeletonBlock, SkeletonLines, SkeletonRows } from '../components/States'
-import { formatInt, formatLogDate, formatLogTime, formatPercent, formatScore, logSpan, serial } from '../lib/format'
+import { formatInt, formatLogDate, formatLogTime, formatPercent, logSpan, serial } from '../lib/format'
 import { stageCopy, viewCopy, viewVar } from '../lib/vocabulary'
 import AnimatedContent from '../reactbits/AnimatedContent'
 import SplitText from '../reactbits/SplitText'
@@ -31,8 +31,7 @@ function pickFeatured(runs: Run[]): Run | null {
   return finished.sort((a, b) => (b.total_rows ?? 0) - (a.total_rows ?? 0))[0] ?? null
 }
 
-function HeroTicket({ run, summary }: { run: Run; summary: RunSummary | null }) {
-  const auc = summary?.test_metrics?.auc_roc
+function HeroTicket({ run }: { run: Run }) {
   return (
     <div className="ticket hero-ticket">
       <div className="ticket__body hero-ticket__body">
@@ -62,12 +61,6 @@ function HeroTicket({ run, summary }: { run: Run; summary: RunSummary | null }) 
           <Barcode value={`run-${run.id}-${run.created_at}`} bars={32} />
           <p className="data hero-ticket__serial">RUN{serial(run.id)}</p>
         </div>
-        {auc != null && (
-          <p>
-            <span className="display hero-ticket__auc">{formatScore(auc)}</span>
-            <span className="hero-ticket__auc-label">ranking quality against the log's own labels (AUC-ROC)</span>
-          </p>
-        )}
         <Link to={`/runs/${run.id}`} className="hero-ticket__link">Open this report</Link>
       </div>
     </div>
@@ -152,7 +145,6 @@ export default function LandingPage() {
   const runs = useApi<Page<Run>>('/runs')
   const featured = runs.data ? pickFeatured(runs.data.items) : null
   const detail = useApi<RunDetail>(featured ? `/runs/${featured.id}` : null)
-  const summary = useApi<RunSummary>(featured ? `/runs/${featured.id}/summary` : null)
 
   return (
     <>
@@ -184,7 +176,7 @@ export default function LandingPage() {
                 <p>Upload a log and its figures will be printed here.</p>
               </EmptyNotice>
             )}
-            {featured && <HeroTicket run={featured} summary={summary.data} />}
+            {featured && <HeroTicket run={featured} />}
           </div>
         </div>
       </section>

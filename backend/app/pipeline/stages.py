@@ -223,17 +223,3 @@ def analyse_root_cause(df: pd.DataFrame, is_anomaly: np.ndarray, severity_score:
         df, incident_ids, severity_score, cooccurrence)
     return RootCauseAnalysis(incident_ids, signatures, cooccurrence, rankings)
 
-
-def evaluate(df: pd.DataFrame, final_scores: np.ndarray, is_anomaly: np.ndarray,
-             val_end_idx: int, cfg: PipelineConfig) -> dict[str, dict[str, Any]]:
-    """src/evaluation/metrics.py: label-based metrics on the held-out test split."""
-    settings = cfg.backend("evaluation")
-    if not settings["enabled"]:
-        return {}
-    y_true = df["label"].ne(settings["normal_label"]).fillna(False).to_numpy()[val_end_idx:].astype(int)
-    if len(np.unique(y_true)) < 2:
-        # Needs both normal and labelled-anomalous lines in the test split.
-        return {}
-    metrics = fn("engine.evaluation.metrics:compute_metrics")(
-        y_true, is_anomaly[val_end_idx:].astype(int), final_scores[val_end_idx:])
-    return {"test": metrics}

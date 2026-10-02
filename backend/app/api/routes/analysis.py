@@ -1,12 +1,12 @@
-"""Incidents, root-cause candidates, co-occurrence, drift and evaluation."""
+"""Incidents, root-cause candidates, co-occurrence, and drift."""
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
 
 from app.api.deps import CompletedRun, DbSession, Paging
 from app.db.models import (ComponentCooccurrence, DriftSummary, DriftWindow,
-                           EvaluationMetric, Incident, RootCauseCandidate)
+                           Incident, RootCauseCandidate)
 from app.schemas.analysis import (CooccurrenceOut, DriftSignalOut, IncidentDetail,
-                                  IncidentOut, MetricOut, RootCauseCount)
+                                  IncidentOut, RootCauseCount)
 from app.schemas.common import Page
 
 router = APIRouter(prefix="/runs/{run_id}", tags=["analysis"])
@@ -91,10 +91,3 @@ def drift(run: CompletedRun, db: DbSession):
             control_test=summary.control_test, windows=windows))
     return signals
 
-
-@router.get("/evaluation", response_model=list[MetricOut])
-def evaluation(run: CompletedRun, db: DbSession):
-    """Label-based metrics; empty when the log carries no usable labels."""
-    return db.scalars(
-        select(EvaluationMetric).where(EvaluationMetric.run_id == run.id)
-        .order_by(EvaluationMetric.scope)).all()

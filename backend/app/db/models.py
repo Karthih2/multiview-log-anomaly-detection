@@ -96,7 +96,6 @@ class LogEvent(Base):
     run_id: Mapped[int] = _run_fk()
     row_index: Mapped[int]
 
-    label: Mapped[str | None] = mapped_column(String(64))
     timestamp: Mapped[int | None]
     time: Mapped[datetime]
     node: Mapped[str | None] = mapped_column(String(128))
@@ -216,18 +215,9 @@ class EvidencePackage(Base):
     package: Mapped[dict[str, Any]] = mapped_column(JSON)
 
 
-class EvaluationMetric(Base):
-    __tablename__ = "evaluation_metrics"
-    __table_args__ = (UniqueConstraint("run_id", "scope"),)
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    run_id: Mapped[int] = _run_fk()
-    scope: Mapped[str] = mapped_column(String(64))
-    metrics: Mapped[dict[str, Any]] = mapped_column(JSON)
-
 
 # Tables holding per-run rows, in an order that is safe to bulk-delete.
 RUN_CHILD_TABLES = (
     LogEvent, Template, Incident, RootCauseCandidate, ComponentCooccurrence,
-    DriftSummary, DriftWindow, EvidencePackage, EvaluationMetric,
+    DriftSummary, DriftWindow, EvidencePackage,
 )

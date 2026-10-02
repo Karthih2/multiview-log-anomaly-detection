@@ -14,7 +14,7 @@ function setting(parameters: Record<string, Record<string, unknown>> | null, sec
 }
 
 export default function ViewsSheet() {
-  const { run, summary, evaluation } = useReport()
+  const { run, summary } = useReport()
   const views = run.view_summary
 
   if (!views) {
@@ -27,11 +27,9 @@ export default function ViewsSheet() {
   }
 
   const names = Object.keys(views)
-  const aucAlone = (view: string) =>
-    evaluation.find((e) => e.scope === `ablation:${view}_only`)?.metrics.auc_roc ?? null
 
   const settings: TallyRow[] = [
-    ['Training share of the log', setting(run.parameters, 'split', 'train_frac')],
+    ['Learning window share of the log', setting(run.parameters, 'split', 'train_frac')],
     ['Normal-message clusters (semantic)', setting(run.parameters, 'semantic_scoring', 'n_prototypes')],
     ['Hidden states (temporal)', setting(run.parameters, 'temporal_hmm', 'n_states')],
     ['Threshold window, in lines', setting(run.parameters, 'threshold', 'window')],
@@ -60,7 +58,6 @@ export default function ViewsSheet() {
       {names.map((view) => {
         const copy = viewCopy(view)
         const stats = views[view]
-        const auc = aucAlone(view)
         const fitted = run.detectors?.[view]
         const rows: TallyRow[] = [
           { label: 'Average score, all lines', value: formatScore(stats.mean_score), note: '0 is ordinary, 1 is as unusual as it gets.' },
@@ -69,9 +66,6 @@ export default function ViewsSheet() {
           { label: 'Flags it contributed most to', value: formatInt(stats.dominant_flags),
             note: `${formatPercent(summary.n_anomalies ? stats.dominant_flags / summary.n_anomalies : null)} of all flags. Contribution is score times weight.` },
         ]
-        if (auc != null) {
-          rows.push({ label: 'AUC-ROC on its own', value: formatScore(auc), note: 'Ranking quality if this view were the only one. 0.5 is chance.' })
-        }
         return (
           <section key={view} className="sheet__section view-block" style={{ '--view': viewVar(view) } as CSSProperties}>
             <div className="view-block__intro">

@@ -9,15 +9,14 @@ export interface StageCopy {
 const STAGES: Record<string, StageCopy> = {
   ingest: { label: 'Read and clean', detail: 'Split each line into fields, drop broken lines, sort by time.' },
   parse: { label: 'Mine templates', detail: 'Drain3 groups lines that share a shape and pulls out their variables.' },
-  split: { label: 'Split by time', detail: 'Earlier lines teach the detectors, later lines are held back.' },
+  split: { label: 'Learning window', detail: 'The first part of the log teaches the detectors what normal looks like.' },
   features: { label: 'Build three views', detail: 'Meaning, structure and timing features for every line.' },
   scoring: { label: 'Score each view', detail: 'Prototype distance, Isolation Forest with LOF, HMM with z-score.' },
   fusion: { label: 'Fuse by reliability', detail: 'Each view is weighted by how trustworthy it is for that line.' },
   threshold: { label: 'Threshold and severity', detail: 'A moving cutoff flags anomalies and rates how serious they are.' },
-  drift: { label: 'Check for drift', detail: 'Compare later windows with the training period.' },
+  drift: { label: 'Check for drift', detail: 'Compare later windows with the learning window.' },
   evidence: { label: 'Collect evidence', detail: 'Why each of the most severe lines was flagged.' },
   root_cause: { label: 'Group and rank', detail: 'Cluster anomalies into incidents and rank likely origins.' },
-  evaluation: { label: 'Evaluate', detail: 'Compare flags with labels, when the log has them.' },
   persist: { label: 'Store results', detail: 'Write everything to the database.' },
   load_artifacts: { label: 'Load saved outputs', detail: 'Read scores the experiment already computed.' },
 }
@@ -93,17 +92,6 @@ export function bySeverity(a: string, b: string): number {
 export const severityVar = (severity: string) => `var(--sev-${severity.toLowerCase()}, var(--ink-soft))`
 export const viewVar = (view: string) => `var(--view-${view}, var(--ink-soft))`
 
-const METRICS: Record<string, { label: string; meaning: string }> = {
-  auc_roc: { label: 'AUC-ROC', meaning: 'How well scores rank real anomalies above normal lines. 0.5 is chance, 1 is perfect.' },
-  auc_pr: { label: 'AUC-PR', meaning: 'Ranking quality when anomalies are rare.' },
-  precision: { label: 'Precision', meaning: 'Share of flagged lines that are real anomalies.' },
-  recall: { label: 'Recall', meaning: 'Share of real anomalies that were flagged.' },
-  f1: { label: 'F1', meaning: 'Balance of precision and recall.' },
-}
-
-export const metricCopy = (key: string) => METRICS[key] ?? { label: key, meaning: '' }
-export const HEADLINE_METRICS = ['auc_roc', 'auc_pr', 'precision', 'recall', 'f1']
-
 const FACTORS: { key: 'first_occurrence_priority_norm' | 'avg_severity_norm' | 'in_cluster_freq_norm' | 'cooc_centrality_norm'; label: string }[] = [
   { key: 'first_occurrence_priority_norm', label: 'Appeared first' },
   { key: 'avg_severity_norm', label: 'Severity' },
@@ -111,15 +99,3 @@ const FACTORS: { key: 'first_occurrence_priority_norm' | 'avg_severity_norm' | '
   { key: 'cooc_centrality_norm', label: 'Co-occurrence' },
 ]
 export const RANKING_FACTORS = FACTORS
-
-const SCOPES: Record<string, string> = {
-  test: 'Held-out test period',
-  seen_templates: 'Templates seen in training',
-  unseen_templates: 'Templates never seen in training',
-  'ablation:semantic_only': 'Semantic view alone',
-  'ablation:structural_only': 'Structural view alone',
-  'ablation:temporal_only': 'Temporal view alone',
-  'ablation:semantic_structural': 'Semantic and structural, equal weight',
-  'ablation:full': 'All three views, equal weight',
-}
-export const scopeLabel = (scope: string) => SCOPES[scope] ?? scope

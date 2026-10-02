@@ -7,7 +7,7 @@ import { Count, Tally } from '../../components/Ephemera'
 import type { TallyRow } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonBlock, SkeletonRows } from '../../components/States'
 import { formatInt, formatLogDate, formatPercent, formatScore } from '../../lib/format'
-import { bySeverity, metricCopy, severityVar } from '../../lib/vocabulary'
+import { bySeverity, severityVar } from '../../lib/vocabulary'
 import { useReport } from './ReportLayout'
 
 const TOP_ROWS = 8
@@ -27,10 +27,6 @@ export default function OverviewSheet() {
     { label: 'Incidents', value: count(summary.n_incidents), note: 'Flagged lines that happened close together in time, grouped.' },
     { label: 'Message templates found', value: count(summary.n_templates), note: 'Distinct line shapes mined by Drain3.' },
   ]
-  const auc = summary.test_metrics?.auc_roc
-  if (auc != null) {
-    tally.push({ label: metricCopy('auc_roc').label, value: formatScore(auc), note: metricCopy('auc_roc').meaning })
-  }
   const severities = Object.keys(summary.severity_counts).sort(bySeverity)
 
   return (

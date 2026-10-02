@@ -63,10 +63,3 @@ evidence:
   # How many evidence packages to build per run, highest severity first.
   # null = one for every flagged anomaly (slow on large runs).
   max_packages: 200
-
-evaluation:
-  # Label-based metrics on the held-out test split. Labels are only ever read
-  # here, never by a detector.
-  enabled: true
-  # Value of the `label` column that marks a normal (non-alert) line.
-  normal_label: "-"
