@@ -69,6 +69,13 @@ def test_upload_runs_full_pipeline(client):
     assert set(views) == {"semantic", "structural", "temporal"}
     assert sum(v["dominant_flags"] for v in views.values()) == run["n_anomalies"]
 
+    # Feature-level reasons are stored inside the evidence packages.
+    flagged = client.get(f"{API}/runs/{run_id}/anomalies").json()["items"]
+    packages = [client.get(f"{API}/runs/{run_id}/events/{e['row_index']}").json()["evidence"] for e in flagged[:20]]
+    packages = [p["package"] for p in packages if p]
+    assert any(p.get("structural_shap") and p.get("temporal_deviations") and p.get("semantic_prototype")
+               for p in packages)
+
     summary = client.get(f"{API}/runs/{run_id}/summary").json()
     assert summary["total_rows"] == run["total_rows"] > 0
     assert sum(summary["severity_counts"].values()) == summary["n_anomalies"]

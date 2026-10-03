@@ -203,33 +203,13 @@ export function ScoreChart({ buckets, incidents, trainEndRow, driftRow, selected
   )
 }
 
-/** A tiny trend line for a KPI tile. */
-export function Sparkline({ values, colour = 'var(--peri-deep)' }: { values: number[]; colour?: string }) {
-  const id = useId().replace(/:/g, '')
-  if (values.length < 2) return null
-  const top = Math.max(...values, 1)
-  const points = values.map((v, i) => `${((i / (values.length - 1)) * 100).toFixed(2)},${(30 - (v / top) * 28).toFixed(2)}`)
-  const line = points.map((p, i) => `${i ? 'L' : 'M'}${p}`).join('')
-  return (
-    <svg className="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id={`spark-${id}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={colour} stopOpacity="0.4" />
-          <stop offset="100%" stopColor={colour} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={`${line}L100,32L0,32Z`} fill={`url(#spark-${id})`} />
-      <path d={line} fill="none" stroke={colour} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
 const RADIUS = 48
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 /** Severity split as a ring. Every slice is also named in the key beside it. */
 export function SeverityDonut({ counts }: { counts: Record<string, number> }) {
   const [ref, seen] = useInView<HTMLDivElement>(0.3)
+  const [hot, setHot] = useState<string | null>(null)
   const names = Object.keys(counts).sort(bySeverity).reverse()
   const total = names.reduce((sum, name) => sum + counts[name], 0)
   let offset = 0
@@ -247,8 +227,11 @@ export function SeverityDonut({ counts }: { counts: Record<string, number> }) {
             <circle key={name} cx={60} cy={60} r={RADIUS} fill="none" stroke={severityVar(name)} strokeWidth={14}
               strokeDasharray={`${Math.max(length - gap, 0)} ${CIRCUMFERENCE}`}
               strokeDashoffset={seen ? -start : -start + length}
-              transform="rotate(-90 60 60)" className="donut__arc"
-              style={{ opacity: seen ? 1 : 0 } as CSSProperties} />
+              transform="rotate(-90 60 60)" className={`donut__arc${hot === name ? ' is-hot' : ''}`}
+              style={{ opacity: seen ? (hot && hot !== name ? 0.3 : 1) : 0 } as CSSProperties}
+              onPointerEnter={() => setHot(name)} onPointerLeave={() => setHot(null)}>
+              <title>{`${name.toLowerCase()}: ${formatInt(counts[name])} lines`}</title>
+            </circle>
           )
         })}
       </svg>
@@ -258,7 +241,8 @@ export function SeverityDonut({ counts }: { counts: Record<string, number> }) {
       </div>
       <ul className="donut__key">
         {names.map((name) => (
-          <li key={name}>
+          <li key={name} className={hot === name ? 'is-hot' : ''}
+            onPointerEnter={() => setHot(name)} onPointerLeave={() => setHot(null)}>
             <span className="tag__swatch" style={{ '--swatch': severityVar(name) } as CSSProperties} />
             <span className="donut__name">{name.toLowerCase()}</span>
             <span className="num">{formatInt(counts[name])}</span>

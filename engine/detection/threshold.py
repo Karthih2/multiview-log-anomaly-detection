@@ -53,15 +53,16 @@ def compute_severity(final_scores: np.ndarray, is_anomaly: np.ndarray,
     # Only meaningful for flagged anomalies; non-anomalies get severity 0
     severity_score = severity_score * is_anomaly
 
-    buckets = pd.cut(
-        severity_score,
-        bins=[-0.01, 0.0001, 0.3, 0.6, 1.0],
-        labels=["NONE", "LOW", "MEDIUM", "HIGH"],
-    ).astype(str)
-
-    # Reserve CRITICAL for the genuine top tail, not just "high severity_score"
-    critical_cutoff = np.quantile(severity_score[is_anomaly], 0.98) if is_anomaly.sum() > 0 else 1.0
-    buckets = np.where((severity_score >= critical_cutoff) & is_anomaly, "CRITICAL", buckets)
+    # Buckets are quantiles of the flagged lines' own severity: bottom 50% LOW,
+    # 50-85% MEDIUM, 85-98% HIGH, top 2% CRITICAL. Non-flagged lines are NONE.
+    buckets = np.full(len(severity_score), "NONE", dtype=object)
+    if is_anomaly.any():
+        q50, q85, q98 = np.quantile(severity_score[is_anomaly], [0.50, 0.85, 0.98])
+        buckets[is_anomaly] = "LOW"
+        buckets[is_anomaly & (severity_score >= q50)] = "MEDIUM"
+        buckets[is_anomaly & (severity_score >= q85)] = "HIGH"
+        buckets[is_anomaly & (severity_score >= q98)] = "CRITICAL"
+    buckets = buckets.astype(str)
 
     return severity_score, buckets
 

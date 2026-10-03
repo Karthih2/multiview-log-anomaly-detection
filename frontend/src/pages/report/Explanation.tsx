@@ -1,6 +1,6 @@
 import { useApi } from '../../api/hooks'
-import type { EventDetail, LogEvent } from '../../api/types'
-import ShapWaterfall from '../../components/Shap'
+import type { EventDetail, EvidencePackage, LogEvent } from '../../api/types'
+import ShapWaterfall, { shapValues } from '../../components/Shap'
 import { Tally } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonRows } from '../../components/States'
 import { formatClock, formatLogTime, formatScore } from '../../lib/format'
@@ -27,7 +27,11 @@ export default function Explanation({ runId, rowIndex, evidenceLimit }: { runId:
     const weight = event[`${view}_weight` as keyof LogEvent] as number
     return { view, score, weight, contribution: score * weight }
   })
-  const dominant = parts.reduce((a, b) => (b.contribution > a.contribution ? b : a))
+  // Same Shapley values the waterfall draws, so the sentence and the chart agree.
+  const dominant = baseline.data
+    ? shapValues(parts.map((p) => ({ ...p, baseline: baseline.data![p.view] ?? 0 })))
+        .values.reduce((a, b) => (Math.abs(b.phi) > Math.abs(a.phi) ? b : a))
+    : parts.reduce((a, b) => (b.contribution > a.contribution ? b : a))
   const evidence = event.evidence?.package
   const nearest = evidence?.nearest_normal_example?.[0]
 
@@ -44,6 +48,7 @@ export default function Explanation({ runId, rowIndex, evidenceLimit }: { runId:
           <ShapWaterfall threshold={event.threshold}
             parts={parts.map((part) => ({ view: part.view, score: part.score, weight: part.weight, baseline: baseline.data![part.view] ?? 0 }))} />
         )}
+        <WhatDrove pkg={evidence} />
         <Tally rows={[
           { label: 'Final score', value: formatScore(event.final_score), note: 'The three contributions added together.' },
           ...(event.threshold != null
@@ -92,6 +97,50 @@ export default function Explanation({ runId, rowIndex, evidenceLimit }: { runId:
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Feature-level reasons per view. Absent on imported runs. */
+function WhatDrove({ pkg }: { pkg: EvidencePackage | undefined }) {
+  const shap = pkg?.structural_shap?.slice(0, 4)
+  const timing = pkg?.temporal_deviations?.slice(0, 3)
+  const proto = pkg?.semantic_prototype
+  if (!shap?.length && !timing?.length && !proto) {
+    return <p className="muted">Feature-level reasons are kept for new runs only.</p>
+  }
+  const peak = Math.max(...(shap ?? []).map((f) => Math.abs(f.shap)), 1e-9)
+  return (
+    <div className="drove">
+      <h3>What drove it</h3>
+      {shap && shap.length > 0 && (
+        <section>
+          <h4>Structure (SHAP)</h4>
+          {shap.map((f) => (
+            <div className="drove__row" key={f.feature}>
+              <span className="drove__label">{f.feature} <span className="muted data">{String(f.value)}</span></span>
+              <span className="drove__track">
+                <span className={`drove__bar drove__bar--${f.pushes}`} style={{ width: `${(Math.abs(f.shap) / peak) * 100}%` }} />
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
+      {timing && timing.length > 0 && (
+        <section>
+          <h4>Timing</h4>
+          <ul className="drove__list">
+            {timing.map((d) => <li key={d.feature}>{d.feature} <span className="data">{d.value}</span> <span className="muted">· usual {d.usual}</span></li>)}
+          </ul>
+        </section>
+      )}
+      {proto && (
+        <section>
+          <h4>Meaning</h4>
+          <p className="muted">Closest normal message ({Math.round(proto.similarity * 100)}% match to the typical pattern):</p>
+          <p className="logline">{proto.example}</p>
+        </section>
+      )}
     </div>
   )
 }

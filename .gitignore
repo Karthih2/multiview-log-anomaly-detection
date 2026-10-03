@@ -19,3 +19,19 @@ frontend/dist
 data/processed/*
 backend/storage/*
 .env
+
+# Tooling and editor leftovers
+.playwright-mcp/
+design/.impeccable/
+~$*
+*.tmp
+
+# Working notes and drafts, kept local
+research/README.old.md
+research/report_notes.md
+docs/SEMANTIC_VIEW_NOTE.md
+docs/LogSight Adaptive*.md
+docs/LogSight*Report*.docx
+docs/*.drawio
+docs/System Architecture*.gif
+docs/screenshots/navbar-*.png

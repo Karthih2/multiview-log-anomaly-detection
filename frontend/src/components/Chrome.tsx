@@ -1,14 +1,24 @@
 import { useEffect } from 'react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Barcode } from './Ephemera'
+
+/** The favicon, drawn inline (same bars, same colours) so the mark and the browser tab match. */
+function WordmarkMark() {
+  return (
+    <svg className="wordmark__mark" viewBox="0 0 32 32" width="32" height="32" shapeRendering="crispEdges" aria-hidden="true">
+      <rect width="32" height="32" fill="var(--mark-bg)" />
+      <path fill="var(--mark-fg)" d="M6 7h3v18H6zm5 0h1.5v18H11zm4 0h4v18h-4zm6 0h1.5v18H21zm3.5 0H26v18h-1.5z" />
+      <rect className="wordmark__scan" x="0" y="0" width="2" height="32" fill="var(--mark-bg)" opacity="0" />
+    </svg>
+  )
+}
 
 function Masthead() {
   return (
     <header className="masthead">
       <div className="page masthead__inner">
         <Link to="/" className="wordmark" aria-label="LogSight home">
-          <span className="wordmark__bars"><Barcode value="logsight" bars={14} /></span>
+          <WordmarkMark />
           <span className="wordmark__text">LogSight</span>
         </Link>
         <nav aria-label="Main">

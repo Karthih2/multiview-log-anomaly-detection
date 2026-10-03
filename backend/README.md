@@ -14,7 +14,7 @@ raw log ──► ingest ──► parse (Drain3) ──► chronological split
                                               │
               ┌───────────────────────────────┼───────────────────────────────┐
         semantic features               structural features             temporal features
-        (SBERT per template)            (template, level, freq)         (bursts, entropy, ...)
+        (SBERT per distinct line)        (template, level, freq)         (bursts, entropy, ...)
               │                               │                               │
         prototype distance              Isolation Forest + LOF          HMM + rolling z-score
               └───────────────────────────────┼───────────────────────────────┘
@@ -100,8 +100,10 @@ Nothing is hardcoded in the backend code.
 
 Some values are fixed inside the experiment functions themselves and are
 therefore not configurable without editing `../engine`: the embedding model name,
-Isolation Forest / LOF `contamination`, the view quality multipliers, severity
-weights and bucket cut-offs, and the root-cause ranking weights.
+Isolation Forest / LOF `contamination`, the severity weights and the quantile
+bucket cut-offs (flagged lines: bottom 50% LOW, 50-85% MEDIUM, 85-98% HIGH, top 2%
+CRITICAL), and the root-cause ranking weights. View quality is not a constant: it is
+measured per run from the unlabelled learning window (`engine/detection/reliability.py`).
 
 ## API
 
@@ -117,6 +119,8 @@ Prefix `/api/v1`. List endpoints take `limit` and `offset`.
 | DELETE | `/runs/{id}` | remove a run and its data |
 | GET | `/runs/{id}/summary` | header numbers: lines, anomalies, rate, incidents, severity counts |
 | GET | `/runs/{id}/timeline` | anomalies per day and severity; `bucket=hour` for short logs |
+| GET | `/runs/{id}/score-timeline` | the log cut into equal slices: worst fused score, mean cutoff and flagged count per slice (`points`) |
+| GET | `/runs/{id}/baseline` | average score of each view over unflagged lines, the reference for per-line attribution |
 | GET | `/runs/{id}/components` | per-component anomaly count and mean severity |
 | GET | `/runs/{id}/anomalies` | flagged events, most severe first; filters `severity`, `component`, `incident_id` |
 | GET | `/runs/{id}/anomaly-kinds` | flagged events grouped by template and component, with the line count and most severe line of each; same filters |
@@ -125,6 +129,7 @@ Prefix `/api/v1`. List endpoints take `limit` and `offset`.
 | GET | `/runs/{id}/templates` | mined templates, most frequent first |
 | GET | `/runs/{id}/incidents` | incident cards with top root-cause candidate |
 | GET | `/runs/{id}/incidents/{incident_id}` | incident with all ranked candidates |
+| GET | `/runs/{id}/root-cause-clusters` | incidents grouped by their top root-cause component, with largest incidents, flagged lines and co-occurring components |
 | GET | `/runs/{id}/root-causes` | how often each component ranked first |
 | GET | `/runs/{id}/cooccurrence` | component pairs seen in the same incident |
 | GET | `/runs/{id}/drift` | KS drift windows and control test per signal |

@@ -1,3 +1,18 @@
+/*
+ * References used for this map:
+ *  1. D3 zoomable circle packing, circle size from a value, sorted largest first, padding between circles:
+ *     https://observablehq.com/notebook-kit/ex/d3/zoomable-pack
+ *  2. Mike Bostock, clustered force layout, circles seeded by packing and kept apart so none overlap:
+ *     https://gist.github.com/mbostock/7882658
+ *  3. Datadog Watchdog RCA, the answer is shown as a short ordered chain (root cause, critical failure, impact):
+ *     https://docs.datadoghq.com/watchdog/rca/
+ *  4. Dynatrace root cause analysis, ranked contributors with a drill-down to the evidence:
+ *     https://docs.dynatrace.com/docs/dynatrace-intelligence/root-cause-analysis/concepts
+ *  5. PagerDuty AIOps, "probable origin" shown beside related incidents:
+ *     https://support.pagerduty.com/docs/aiops
+ * Taken from them: size encodes count and the biggest circle comes first (1, 2); the hovered group lifts while
+ * the rest dim, and each circle opens a drill-down (4); the tooltip names the likely origin and what fails with it (3, 5).
+ */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent } from 'react'
 import type { RootCauseCluster } from '../api/types'
@@ -50,6 +65,11 @@ function layout(clusters: RootCauseCluster[], width: number, height: number): Pl
   })
   return placed
 }
+
+/** The incident a cluster opens from the keyboard: its largest one. */
+const members0 = (cluster: RootCauseCluster): number | null =>
+  cluster.incidents.reduce<{ id: number; n: number } | null>(
+    (best, m) => (best && best.n >= m.n_anomalies ? best : { id: m.incident_id, n: m.n_anomalies }), null)?.id ?? null
 
 type Hover = { kind: 'cluster'; index: number } | { kind: 'incident'; index: number; incidentId: number } | null
 
@@ -106,24 +126,36 @@ export default function ClusterMap({ clusters, colours, totalIncidents, onOpen }
                 <g key={cluster.component} className={`cmap__cluster${seen ? ' is-in' : ''}${dim ? ' is-dim' : ''}`}
                   style={{ '--i': index } as CSSProperties}
                   onPointerEnter={() => setHover({ kind: 'cluster', index })}>
+                  <g className={`cmap__lift${active === index ? ' is-lifted' : ''}`}>
                   <circle cx={x} cy={y} r={r} fill={colour} fillOpacity={active === index ? 0.2 : 0.1}
-                    stroke={colour} strokeWidth={active === index ? 3 : 1.5} className="cmap__ring" />
+                    stroke={colour} strokeWidth={active === index ? 3 : 1.5} className="cmap__ring cursor-target"
+                    tabIndex={0} role="button"
+                    aria-label={`Cluster ${cluster.component}, ${formatInt(cluster.n_incidents)} incidents. Enter opens the largest.`}
+                    onFocus={() => { setPointer({ x, y: y - r }); setHover({ kind: 'cluster', index }) }}
+                    onBlur={() => setHover(null)}
+                    onClick={() => members0(cluster) && onOpen(members0(cluster)!)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && members0(cluster)) { e.preventDefault(); onOpen(members0(cluster)!) } }} />
                   {members.map((member, m) => {
                     const distance = inner * Math.sqrt((m + 0.5) / members.length)
                     const angle = m * GOLDEN_ANGLE
                     const dotR = Math.max(2.6, Math.min(r * 0.17, 2.6 + (r * 0.17 - 2.6) * Math.sqrt(member.n_anomalies / maxLines)))
                     const focus = hover?.kind === 'incident' && hover.incidentId === member.incident_id
+                    const dx = x + Math.cos(angle) * distance
+                    const dy = y + Math.sin(angle) * distance
                     return (
-                      <circle key={member.incident_id} cx={x + Math.cos(angle) * distance} cy={y + Math.sin(angle) * distance}
+                      <circle key={member.incident_id} cx={dx} cy={dy}
                         r={focus ? dotR + 2.5 : dotR} fill={colour} stroke="var(--paper)" strokeWidth={1.2}
-                        className="cmap__dot cursor-target" tabIndex={0} role="button"
+                        className={`cmap__dot cursor-target${seen ? ' is-in' : ''}`} tabIndex={0} role="button"
+                        style={{ '--d': m } as CSSProperties}
                         aria-label={`Incident ${member.incident_id}, ${formatInt(member.n_anomalies)} flagged lines, cluster ${cluster.component}`}
                         onPointerEnter={() => setHover({ kind: 'incident', index, incidentId: member.incident_id })}
-                        onFocus={() => setHover({ kind: 'incident', index, incidentId: member.incident_id })}
+                        onFocus={() => { setPointer({ x: dx, y: dy - dotR }); setHover({ kind: 'incident', index, incidentId: member.incident_id }) }}
+                        onBlur={() => setHover(null)}
                         onClick={() => onOpen(member.incident_id)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(member.incident_id) } }} />
                     )
                   })}
+                  </g>
                   <text x={x} y={y - r - 8} textAnchor="middle" className="cmap__name">{cluster.component}</text>
                   <text x={x} y={y + r + 18} textAnchor="middle" className="cmap__count">
                     {formatInt(cluster.n_incidents)} incident{cluster.n_incidents === 1 ? '' : 's'}
@@ -134,7 +166,7 @@ export default function ClusterMap({ clusters, colours, totalIncidents, onOpen }
           </svg>
         )}
         {hoveredCluster && (
-          <div className="cmap__tip" role="status"
+          <div className={`cmap__tip${pointer.y < 150 ? ' cmap__tip--below' : ''}`} role="status"
             style={{ left: Math.min(Math.max(pointer.x, 120), Math.max(width - 120, 120)), top: pointer.y }}>
             {hoveredIncident ? (
               <>

@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react'
-import { ShareBar } from '../../components/charts'
+import { useApi } from '../../api/hooks'
+import type { DriftSignal } from '../../api/types'
+import { DriftChart, ShareBar } from '../../components/charts'
 import { Tally } from '../../components/Ephemera'
 import type { TallyRow } from '../../components/Ephemera'
 import Reveal from '../../components/Reveal'
-import { EmptyNotice } from '../../components/States'
+import { EmptyNotice, SkeletonBlock } from '../../components/States'
 import { formatInt, formatPercent } from '../../lib/format'
 import { detectorFactLabel, viewCopy, viewVar } from '../../lib/vocabulary'
 import { useReport } from './ReportLayout'
@@ -12,6 +14,27 @@ import { useReport } from './ReportLayout'
 function setting(parameters: Record<string, Record<string, unknown>> | null, section: string, key: string): string | null {
   const value = parameters?.[section]?.[key]
   return value == null ? null : String(value)
+}
+
+/** Drift needs several 50,000-line windows to say anything; one window is just the run itself. */
+function DriftCheck({ runId, trainEnd }: { runId: number; trainEnd: number | null }) {
+  const drift = useApi<DriftSignal[]>(`/runs/${runId}/drift`)
+  if (drift.loading) return <SkeletonBlock height="9rem" />
+  const signals = drift.data ?? []
+  const judged = signals.filter((s) => s.windows.length > 1 || s.windows.some((w) => w.drift_flagged))
+  if (!judged.length) {
+    return <p className="muted">Drift needs long logs (several 50,000-line windows). This run is too short to judge drift.</p>
+  }
+  return (
+    <div className="drift-grid">
+      {judged.map((signal) => (
+        <figure key={signal.signal} className="drift-grid__item">
+          <figcaption className="caps">{signal.signal.replace(/_/g, ' ')}</figcaption>
+          <DriftChart signal={signal} trainEnd={trainEnd} />
+        </figure>
+      ))}
+    </div>
+  )
 }
 
 export default function ViewsSheet() {
@@ -49,6 +72,7 @@ export default function ViewsSheet() {
       <Reveal>
         <section className="dash__section">
           <h2>Average say in the final score</h2>
+          <p className="muted">Measured on this run's learning window, without labels: a view whose scores separate clearly gets more say.</p>
           <ShareBar parts={names.map((view) => ({
             key: view, label: viewCopy(view).name, share: views[view].mean_weight ?? 0, colour: viewVar(view),
           }))} />
@@ -88,6 +112,13 @@ export default function ViewsSheet() {
           )
         })}
       </div>
+
+      <Reveal>
+        <section className="dash__section">
+          <h2>Drift check</h2>
+          <DriftCheck runId={run.id} trainEnd={run.train_end_idx} />
+        </section>
+      </Reveal>
 
       {settings.length > 0 && (
         <Reveal>

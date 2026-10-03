@@ -32,7 +32,7 @@ def run_pipeline(path: Path, cfg: PipelineConfig, on_stage: StageCallback) -> Pi
 
     on_stage("scoring")
     semantic_scores, kmeans = stages.score_semantic(embeddings, train_end_idx, cfg)
-    structural_scores, iso, lof = stages.score_structural(structural, train_end_idx, cfg)
+    structural_scores, iso, lof, encoder, x_full = stages.score_structural(structural, train_end_idx, cfg)
     temporal_scores, hmm_model = stages.score_temporal(df, temporal, train_end_idx, cfg)
     scores = ViewScores(semantic=semantic_scores, structural=structural_scores, temporal=temporal_scores)
     detectors = stages.describe_detectors(df, embeddings, train_end_idx, kmeans, iso, lof, hmm_model)
@@ -49,7 +49,9 @@ def run_pipeline(path: Path, cfg: PipelineConfig, on_stage: StageCallback) -> Pi
 
     on_stage("evidence")
     evidence = stages.build_evidence(
-        df, embeddings, scores, final_scores, weights, is_anomaly, severity_score, severity_bucket, cfg)
+        df, embeddings, scores, final_scores, weights, is_anomaly, severity_score, severity_bucket, cfg,
+        explain=dict(iso=iso, encoder=encoder, x_full=x_full, structural=structural, temporal=temporal,
+                     kmeans=kmeans, train_end_idx=train_end_idx))
 
     on_stage("root_cause")
     rca = stages.analyse_root_cause(df, is_anomaly, severity_score, cfg)
