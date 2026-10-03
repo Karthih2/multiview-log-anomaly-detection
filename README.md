@@ -1,4 +1,4 @@
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:7F011F,100:2A1514&height=150&text=LogSight&fontColor=F6EBCB&fontSize=56&fontAlignY=42&desc=multi-view%20log%20anomaly%20detection%20%C2%B7%20root-cause%20localization&descSize=17&descAlignY=72" width="100%">
+<img src="https://img.shields.io/badge/LogSight-BGL%20Log%20Anomaly%20Detection%20%C2%B7%20Root--Cause-F6EBCB?style=for-the-badge&labelColor=7F011F&logo=logstash&logoColor=F6EBCB" width="100%">
 
 <h1 align="center">🔍 LogSight — Adaptive Multi-View Log Anomaly Detection & Root-Cause Localization</h1>
 
@@ -376,17 +376,14 @@ Consecutive chunks of BGL looked "drifted" because events come in bursts. A shuf
 
 ## 🚀 Tech Stack
 
-![Python](https://img.shields.io/badge/Python-pandas%20·%20NumPy%20·%20SciPy-7F011F?style=flat-square&logo=python&logoColor=F6EBCB&labelColor=2A1514)
-&nbsp;
-![ML](https://img.shields.io/badge/ML-scikit--learn%20·%20hmmlearn%20·%20SHAP-7F011F?style=flat-square&logo=scikitlearn&logoColor=F6EBCB&labelColor=2A1514)
-&nbsp;
-![NLP](https://img.shields.io/badge/NLP-Sentence--BERT%20·%20Drain3-7F011F?style=flat-square&logo=huggingface&logoColor=F6EBCB&labelColor=2A1514)
-&nbsp;
-![Backend](https://img.shields.io/badge/Backend-FastAPI%20·%20SQLAlchemy%20·%20SQLite-7F011F?style=flat-square&logo=fastapi&logoColor=F6EBCB&labelColor=2A1514)
-&nbsp;
-![Frontend](https://img.shields.io/badge/Frontend-React%20·%20TypeScript%20·%20Vite-7F011F?style=flat-square&logo=react&logoColor=F6EBCB&labelColor=2A1514)
-&nbsp;
-![Deploy](https://img.shields.io/badge/Deploy-Docker%20·%20nginx-7F011F?style=flat-square&logo=docker&logoColor=F6EBCB&labelColor=2A1514)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-pandas%20·%20NumPy%20·%20SciPy-7F011F?style=flat-square&logo=python&logoColor=F6EBCB&labelColor=2A1514" alt="Python" height="28">
+  <img src="https://img.shields.io/badge/ML-scikit--learn%20·%20hmmlearn%20·%20SHAP-7F011F?style=flat-square&logo=scikitlearn&logoColor=F6EBCB&labelColor=2A1514" alt="ML" height="28">
+  <img src="https://img.shields.io/badge/NLP-Sentence--BERT%20·%20Drain3-7F011F?style=flat-square&logo=huggingface&logoColor=F6EBCB&labelColor=2A1514" alt="NLP" height="28">
+  <img src="https://img.shields.io/badge/Backend-FastAPI%20·%20SQLAlchemy%20·%20SQLite-7F011F?style=flat-square&logo=fastapi&logoColor=F6EBCB&labelColor=2A1514" alt="Backend" height="28">
+  <img src="https://img.shields.io/badge/Frontend-React%20·%20TypeScript%20·%20Vite-7F011F?style=flat-square&logo=react&logoColor=F6EBCB&labelColor=2A1514" alt="Frontend" height="28">
+  <img src="https://img.shields.io/badge/Deploy-Docker%20·%20nginx-7F011F?style=flat-square&logo=docker&logoColor=F6EBCB&labelColor=2A1514" alt="Deploy" height="28">
+</p>
 
 ---
 
