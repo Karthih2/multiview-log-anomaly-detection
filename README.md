@@ -1,4 +1,4 @@
-<img src="https://img.shields.io/badge/LogSight-BGL%20Log%20Anomaly%20Detection%20%C2%B7%20Root--Cause-F6EBCB?style=for-the-badge&labelColor=7F011F&logo=logstash&logoColor=F6EBCB" width="100%">
+<img src="https://img.shields.io/badge/LogSight-BGL%20Log%20Anomaly%20Detection%20%C2%B7%20Root--Cause-F6EBCB?style=for-the-badge&labelColor=7F011F&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI%2BPHBhdGggZmlsbD0iI0Y2RUJDQiIgZD0iTTYgN2gzdjE4SDZ6bTUgMGgxLjV2MThIMTF6bTQgMGg0djE4aC00em02IDBoMS41djE4SDIxem0zLjUgMEgyNnYxOGgtMS41eiIvPjwvc3ZnPg%3D%3D" width="100%">
 
 <h1 align="center">🔍 LogSight — Adaptive Multi-View Log Anomaly Detection & Root-Cause Localization</h1>
 
