@@ -1,4 +1,4 @@
-<img src="https://img.shields.io/badge/LogSight-Multi--View%20Log%20Anomaly%20Detection-7F011F?style=for-the-badge" width="100%">
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:7F011F,100:2A1514&height=150&text=LogSight&fontColor=F6EBCB&fontSize=56&fontAlignY=42&desc=multi-view%20log%20anomaly%20detection%20%C2%B7%20root-cause%20localization&descSize=17&descAlignY=72" width="100%">
 
 <h1 align="center">🔍 LogSight — Adaptive Multi-View Log Anomaly Detection & Root-Cause Localization</h1>
 
@@ -8,16 +8,31 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white">
-  <img src="https://img.shields.io/badge/FastAPI-0.142-009688?style=flat-square&logo=fastapi&logoColor=white">
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black">
-  <img src="https://img.shields.io/badge/scikit--learn-1.7-F7931E?style=flat-square&logo=scikitlearn&logoColor=white">
-  <img src="https://img.shields.io/badge/Sentence--BERT-MiniLM--L6--v2-FFD21E?style=flat-square&logo=huggingface&logoColor=black">
-  <img src="https://img.shields.io/badge/SQLite-Storage-003B57?style=flat-square&logo=sqlite&logoColor=white">
-  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white">
-  <img src="https://img.shields.io/badge/Dataset-BGL%20(Loghub)-green?style=flat-square">
-  <img src="https://img.shields.io/badge/Tests-29%20passing-brightgreen?style=flat-square&logo=pytest&logoColor=white">
+  <img src="https://img.shields.io/badge/Python-3.10-7F011F?style=flat-square&logo=python&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/FastAPI-0.142-7F011F?style=flat-square&logo=fastapi&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/React-19-7F011F?style=flat-square&logo=react&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/scikit--learn-1.7-7F011F?style=flat-square&logo=scikitlearn&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/Sentence--BERT-MiniLM--L6--v2-7F011F?style=flat-square&logo=huggingface&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/SQLite-Storage-7F011F?style=flat-square&logo=sqlite&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/Docker-Compose-7F011F?style=flat-square&logo=docker&logoColor=F6EBCB&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/Dataset-BGL%20(Loghub)-F6EBCB?style=flat-square&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/Tests-29%20passing-F6EBCB?style=flat-square&logo=pytest&logoColor=F6EBCB&labelColor=2A1514">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/semantic-SBERT%20%2B%20KMeans-2A5DBA?style=for-the-badge&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/structural-IForest%20%2B%20LOF-0E8A6A?style=for-the-badge&labelColor=2A1514">
+  <img src="https://img.shields.io/badge/temporal-HMM%20%2B%20z--score-B7791A?style=for-the-badge&labelColor=2A1514">
+</p>
+
+```log
+2005-06-03-15.42.50.363779  R02-M1-N0-C:J12-U11  RAS  KERNEL  INFO   instruction cache parity error corrected
+...
+[logsight]  learn   → first 60% of the log is "normal"
+[logsight]  score   → semantic · structural · temporal
+[logsight]  fuse    → weight each view by how reliable it is for this line
+[logsight]  flag    → above the moving cutoff? → severity, evidence, incident, likely origin
+```
 
 ---
 
@@ -361,17 +376,17 @@ Consecutive chunks of BGL looked "drifted" because events come in bursts. A shuf
 
 ## 🚀 Tech Stack
 
-![Python](https://img.shields.io/badge/Python-pandas%20·%20NumPy%20·%20SciPy-3776AB?style=flat-square&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-pandas%20·%20NumPy%20·%20SciPy-7F011F?style=flat-square&logo=python&logoColor=F6EBCB&labelColor=2A1514)
 &nbsp;
-![ML](https://img.shields.io/badge/ML-scikit--learn%20·%20hmmlearn%20·%20SHAP-F7931E?style=flat-square&logo=scikitlearn&logoColor=white)
+![ML](https://img.shields.io/badge/ML-scikit--learn%20·%20hmmlearn%20·%20SHAP-7F011F?style=flat-square&logo=scikitlearn&logoColor=F6EBCB&labelColor=2A1514)
 &nbsp;
-![NLP](https://img.shields.io/badge/NLP-Sentence--BERT%20·%20Drain3-FFD21E?style=flat-square&logo=huggingface&logoColor=black)
+![NLP](https://img.shields.io/badge/NLP-Sentence--BERT%20·%20Drain3-7F011F?style=flat-square&logo=huggingface&logoColor=F6EBCB&labelColor=2A1514)
 &nbsp;
-![Backend](https://img.shields.io/badge/Backend-FastAPI%20·%20SQLAlchemy%20·%20SQLite-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Backend](https://img.shields.io/badge/Backend-FastAPI%20·%20SQLAlchemy%20·%20SQLite-7F011F?style=flat-square&logo=fastapi&logoColor=F6EBCB&labelColor=2A1514)
 &nbsp;
-![Frontend](https://img.shields.io/badge/Frontend-React%20·%20TypeScript%20·%20Vite-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Frontend](https://img.shields.io/badge/Frontend-React%20·%20TypeScript%20·%20Vite-7F011F?style=flat-square&logo=react&logoColor=F6EBCB&labelColor=2A1514)
 &nbsp;
-![Deploy](https://img.shields.io/badge/Deploy-Docker%20·%20nginx-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Deploy](https://img.shields.io/badge/Deploy-Docker%20·%20nginx-7F011F?style=flat-square&logo=docker&logoColor=F6EBCB&labelColor=2A1514)
 
 ---
 
@@ -380,7 +395,6 @@ Consecutive chunks of BGL looked "drifted" because events come in bursts. A shuf
 **Jegadeeswaran D** · **Karthick S** · **Koushal V**
 Department of Artificial Intelligence and Data Science
 
-**Guides:** Dr. S. Suresh Kumar · Mrs. Jayasri Archana Devi
 
 ---
 
@@ -396,7 +410,7 @@ Department of Artificial Intelligence and Data Science
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:7F011F,100:2B2B2B&height=140&section=footer&animation=twinkling" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:F6EBCB,100:7F011F&height=140&section=footer" width="100%"/>
 
 <br/>
 
