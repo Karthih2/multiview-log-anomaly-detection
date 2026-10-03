@@ -43,6 +43,7 @@ export default function OverviewSheet() {
   const scores = useApi<ScoreBucket[]>(`/runs/${run.id}/score-timeline?points=120`)
   const incidents = useApi<Page<Incident>>(`/runs/${run.id}/incidents?limit=${TOP_INCIDENTS}`)
   const items = incidents.data?.items ?? []
+  const skipped = Math.max(0, (run.raw_rows ?? 0) - summary.total_rows)
 
   return (
     <article className="dash">
@@ -62,7 +63,7 @@ export default function OverviewSheet() {
       </header>
 
       <div className="bento">
-        <Kpi icon={Database} tone="peri" label="Lines read" note="After dropping broken lines">
+        <Kpi icon={Database} tone="peri" label="Readable lines" note={skipped > 0 ? `${formatInt(skipped)} lines skipped (no message)` : 'Every line had a message'}>
           <Count to={summary.total_rows} />
         </Kpi>
         <Kpi icon={Flag} tone="crimson" label="Flagged lines" note={`${formatPercent(summary.anomaly_rate)} of all lines`}>

@@ -28,10 +28,10 @@ def hmm_sequence_score(template_ids: np.ndarray, model: hmm.CategoricalHMM,
     windows, so scoring every position is redundant). Un-scored rows are
     forward-filled from the nearest preceding scored point.
 
-    Guards against -inf log-likelihoods (which model.score() can
-    legitimately return for a sequence the HMM considers impossible) —
-    without this guard, -log_likelihood / len(chunk) becomes +inf, which
-    later breaks min-max normalization (inf - inf = NaN).
+    A window the HMM cannot score (a template unseen in training raises, or
+    the log-likelihood is -inf) is novel, so it gets the highest finite score
+    seen so far; before any finite score exists it gets the 99th percentile of
+    the computed scores. Scores stay finite, so min-max normalization is safe.
     """
     X = template_ids.reshape(-1, 1)
     n = len(X)
@@ -42,17 +42,27 @@ def hmm_sequence_score(template_ids: np.ndarray, model: hmm.CategoricalHMM,
         computed_idx.append(n - 1)
     computed_set = set(computed_idx)
 
-    last_score = 0.0
+    max_seen = None
+    novel = []
     for i in computed_idx:
         lo = max(0, i - window + 1)
         chunk = X[lo:i + 1]
         try:
             log_likelihood = model.score(chunk)
-            if np.isfinite(log_likelihood):
-                last_score = -log_likelihood / len(chunk)
         except Exception:
-            pass
-        scores[i] = last_score
+            log_likelihood = -np.inf
+        if np.isfinite(log_likelihood):
+            scores[i] = -log_likelihood / len(chunk)
+            max_seen = scores[i] if max_seen is None else max(max_seen, scores[i])
+        elif max_seen is not None:
+            scores[i] = max_seen
+        else:
+            novel.append(i)
+    if novel:
+        novel_set = set(novel)
+        done = [i for i in computed_idx if i not in novel_set]
+        fill = float(np.percentile(scores[done], 99)) if done else 0.0
+        scores[novel] = fill
 
     last_val = scores[0]
     for i in range(n):

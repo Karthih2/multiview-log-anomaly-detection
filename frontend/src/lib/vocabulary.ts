@@ -36,7 +36,7 @@ const VIEWS: Record<string, ViewCopy> = {
   semantic: {
     name: 'Semantic',
     reads: 'What the line means',
-    detector: 'Sentence-BERT embedding, distance from clusters of normal messages',
+    detector: "Sentence-BERT embedding of each distinct line's own text, distance from clusters of normal messages",
     catches: 'Messages unlike anything seen in training, even when they share no words with known errors.',
   },
   structural: {
@@ -59,7 +59,6 @@ export function viewCopy(view: string): ViewCopy {
 
 // Wording for the facts the backend reads off each fitted detector.
 const DETECTOR_FACTS: Record<string, string> = {
-  templates_embedded: 'Templates embedded',
   distinct_texts_embedded: 'Distinct texts embedded',
   embedding_dimensions: 'Embedding dimensions',
   prototype_model: 'Prototype model',
@@ -93,10 +92,11 @@ export function bySeverity(a: string, b: string): number {
 export const severityVar = (severity: string) => `var(--sev-${severity.toLowerCase()}, var(--ink-soft))`
 export const viewVar = (view: string) => `var(--view-${view}, var(--ink-soft))`
 
-const FACTORS: { key: 'first_occurrence_priority_norm' | 'avg_severity_norm' | 'in_cluster_freq_norm' | 'cooc_centrality_norm'; label: string }[] = [
-  { key: 'first_occurrence_priority_norm', label: 'Appeared first' },
-  { key: 'avg_severity_norm', label: 'Severity' },
-  { key: 'in_cluster_freq_norm', label: 'Frequency' },
-  { key: 'cooc_centrality_norm', label: 'Co-occurrence' },
-]
-export const RANKING_FACTORS = FACTORS
+/** The four ranking factors and their weights in engine/rca/rank_root_cause.py. */
+export const RANK_FACTORS = [
+  { key: 'first_occurrence_priority_norm', label: 'Appeared first', weight: 0.35 },
+  { key: 'avg_severity_norm', label: 'Severity', weight: 0.3 },
+  { key: 'in_cluster_freq_norm', label: 'Frequency', weight: 0.2 },
+  { key: 'cooc_centrality_norm', label: 'Co-occurrence', weight: 0.15 },
+] as const
+export type RankFactorKey = (typeof RANK_FACTORS)[number]['key']

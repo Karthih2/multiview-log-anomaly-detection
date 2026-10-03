@@ -1,4 +1,4 @@
-import type { Page, Run, RunDetail } from './types'
+import type { Run, RunDetail } from './types'
 
 export const API_PREFIX: string = import.meta.env.VITE_API_PREFIX || '/api/v1'
 
@@ -71,5 +71,4 @@ export async function deleteRun(id: number): Promise<void> {
   if (!response.ok) throw await parseError(response)
 }
 
-export const listRuns = (signal?: AbortSignal) => apiGet<Page<Run>>('/runs', signal)
 export const getRun = (id: number | string, signal?: AbortSignal) => apiGet<RunDetail>(`/runs/${id}`, signal)

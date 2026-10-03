@@ -267,6 +267,12 @@ button {
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s var(--ease-out);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .btn:hover {
@@ -381,6 +387,8 @@ select {
 }
 
 .wordmark {
+  --mark-bg: #7f011f;
+  --mark-fg: #f5ebd0;
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
@@ -388,16 +396,40 @@ select {
   font-stretch: 80%;
   font-weight: 900;
   font-size: var(--step-2);
+  line-height: 1;
   text-transform: uppercase;
-  color: var(--crimson);
+  color: var(--mark-bg);
   text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s var(--ease-out);
 }
 
-.wordmark__bars {
+.wordmark__mark {
   display: block;
-  width: 2.2rem;
-  height: 1.7rem;
-  color: var(--crimson);
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+}
+
+.wordmark__text {
+  display: block;
+  transform: translateY(0.04em);
+}
+
+.wordmark:hover,
+.wordmark:focus-visible {
+  color: #4d0013;
+}
+
+/* A barcode being read: a stripe in the tile colour sweeps across the bars once. */
+.wordmark:hover .wordmark__scan,
+.wordmark:focus-visible .wordmark__scan {
+  animation: wordmark-scan 0.55s var(--ease-out) 1 both;
+}
+
+@keyframes wordmark-scan {
+  0% { transform: translateX(0); opacity: 0.9; }
+  100% { transform: translateX(30px); opacity: 0; }
 }
 
 .masthead nav {
@@ -410,6 +442,7 @@ select {
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  transition: color 0.15s ease;
 }
 
 .masthead nav a:not(.btn):hover,
@@ -574,8 +607,15 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton,
-  .backdrop {
+  .backdrop,
+  .wordmark:hover .wordmark__scan,
+  .wordmark:focus-visible .wordmark__scan {
     animation: none;
+  }
+  .wordmark,
+  .btn,
+  .masthead nav a:not(.btn) {
+    transition: none;
   }
   html {
     scroll-behavior: auto;

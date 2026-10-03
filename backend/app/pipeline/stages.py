@@ -31,7 +31,10 @@ def ingest(path: Path) -> tuple[pd.DataFrame, int]:
     df = fn("engine.ingest:clean")(raw)
     if df.empty:
         raise ValueError("No valid log lines found; the file does not match the expected log format.")
-    return df, len(raw)
+    # load_bgl drops lines with no message, so len(raw) under-counts; count the file itself.
+    with open(path, "rb") as handle:
+        readable_lines = sum(1 for line in handle if line.strip())
+    return df, readable_lines
 
 
 def parse(df: pd.DataFrame) -> pd.DataFrame:
@@ -73,12 +76,14 @@ def score_semantic(embeddings: np.ndarray, train_end_idx: int, cfg: PipelineConf
 
 
 def score_structural(structural: pd.DataFrame, train_end_idx: int, cfg: PipelineConfig):
-    """engine/detection/structural_scoring.py. Returns the scores and both fitted detectors."""
+    """engine/detection/structural_scoring.py. Returns the scores, both fitted detectors,
+    the fitted encoder and the encoded full matrix (kept for feature-level explanations)."""
     encode = fn("engine.detection.structural_scoring:encode_structural")
     x_train, encoder = encode(structural.iloc[:train_end_idx], fit=True)
     x_full, _ = encode(structural, encoder=encoder, fit=False)
     iso, lof = section_fn("structural_scoring")(x_train, **cfg.overrides("structural_scoring"))
-    return fn("engine.detection.structural_scoring:structural_anomaly_score")(x_full, iso, lof), iso, lof
+    scores = fn("engine.detection.structural_scoring:structural_anomaly_score")(x_full, iso, lof)
+    return scores, iso, lof, encoder, x_full
 
 
 def score_temporal(df: pd.DataFrame, temporal: pd.DataFrame, train_end_idx: int,
@@ -185,8 +190,9 @@ def monitor_drift(embeddings: np.ndarray, structural: pd.DataFrame, train_end_id
 def build_evidence(df: pd.DataFrame, embeddings: np.ndarray, scores: ViewScores,
                    final_scores: np.ndarray, weights: np.ndarray, is_anomaly: np.ndarray,
                    severity_score: np.ndarray, severity_bucket: np.ndarray,
-                   cfg: PipelineConfig) -> list[dict[str, Any]]:
-    """engine/evidence.py: one evidence package per selected anomaly, most severe first."""
+                   cfg: PipelineConfig, explain: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """engine/evidence.py: one evidence package per selected anomaly, most severe first.
+    `explain` carries the fitted pieces engine/explain.py needs for feature-level reasons."""
     anomaly_idx = np.where(is_anomaly)[0]
     ordered = anomaly_idx[np.argsort(-severity_score[anomaly_idx], kind="stable")]
     max_packages = cfg.backend("evidence")["max_packages"]
@@ -200,8 +206,28 @@ def build_evidence(df: pd.DataFrame, embeddings: np.ndarray, scores: ViewScores,
               final_scores, weights, is_anomaly, severity_bucket, template_ids)
         for idx in ordered
     ]
+    if explain:
+        _add_feature_reasons(packages, ordered, df, embeddings, explain)
     # Round-trip through JSON so numpy scalars become plain values, as the experiment does on save.
     return json.loads(json.dumps(packages, default=str))
+
+
+def _add_feature_reasons(packages: list[dict], rows: np.ndarray, df: pd.DataFrame,
+                         embeddings: np.ndarray, explain: dict[str, Any]) -> None:
+    """engine/explain.py: SHAP (structural), deviations (temporal), prototype message (semantic)."""
+    if not len(rows):
+        return
+    train_end_idx = explain["train_end_idx"]
+    shap_rows = fn("engine.explain:structural_shap")(
+        explain["iso"], explain["encoder"], explain["x_full"][rows], explain["structural"].iloc[rows])
+    deviations = fn("engine.explain:temporal_deviations")(explain["temporal"], train_end_idx, rows)
+    examples = fn("engine.explain:prototype_examples")(
+        embeddings, train_end_idx, explain["kmeans"], df["content"].values)
+    nearest = fn("engine.explain:nearest_prototype")(embeddings, explain["kmeans"], rows)
+    for package, shap_row, deviation, proto in zip(packages, shap_rows, deviations, nearest):
+        package["structural_shap"] = shap_row
+        package["temporal_deviations"] = deviation
+        package["semantic_prototype"] = examples[int(proto)]
 
 
 def analyse_root_cause(df: pd.DataFrame, is_anomaly: np.ndarray, severity_score: np.ndarray,

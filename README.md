@@ -18,6 +18,14 @@ scores, reliability-weighted fusion, moving threshold and severity, drift,
 evidence, incidents and candidate root causes. The first part of the log (the
 learning window) teaches the detectors what normal looks like. No labels are used.
 
+## Results
+
+The accuracy numbers in `research/` come from the full BGL log (4.7M lines) and the
+v1 configuration (one embedding per template, fixed view weights). The app is v2: it embeds each
+distinct line's own text and measures the view weights per run, without labels. The app reports no
+accuracy figure, so its flag counts show the views are active, not that detection is more accurate.
+See `docs/SEMANTIC_VIEW_NOTE.md`.
+
 ## Run it
 
 Python 3.10 and Node 22.

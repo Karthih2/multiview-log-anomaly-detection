@@ -109,6 +109,10 @@ export interface EvidencePackage {
   nearest_normal_example?: { row_index: number; time: string; content: string; similarity: number }[]
   preceding_events?: { time: string; content: string; template_id: number }[]
   dominant_contributing_view?: string
+  /** Feature-level reasons; only present on runs processed by this app, not imported ones. */
+  structural_shap?: { feature: string; value: string | number; shap: number; pushes: 'up' | 'down' }[]
+  temporal_deviations?: { feature: string; value: number; usual: number; z: number }[]
+  semantic_prototype?: { example: string; similarity: number }
 }
 
 export interface EventDetail extends LogEvent {

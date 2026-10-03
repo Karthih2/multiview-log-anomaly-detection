@@ -91,7 +91,7 @@ def verify(path: Path) -> bool:
     rows = len(result.events)
     train = result.train_end_idx
     print(f"\n=== {path.name} ===")
-    print(f"{rows:,} lines, {result.detectors['semantic']['templates_embedded']} templates, "
+    print(f"{rows:,} lines, {result.detectors['semantic']['distinct_texts_embedded']:,} distinct line texts embedded, "
           f"{int(result.is_anomaly.sum()):,} flagged, training on the first {train:,} lines")
 
     print("\nDetectors fitted on this log (rows x features):")

@@ -5,6 +5,7 @@ import { SeverityTag } from '../../components/Ephemera'
 import { ErrorNotice, SkeletonBlock, SkeletonRows } from '../../components/States'
 import { formatInt, formatLogTime, formatScore, logSpan } from '../../lib/format'
 import Explanation from './Explanation'
+import RootCauseSteps from './RootCauseSteps'
 
 /** The chosen incident: where it came from, how likely each component is the origin, and why it was flagged. */
 export default function IncidentFocus({ runId, incidentId }: { runId: number; incidentId: number }) {
@@ -44,6 +45,11 @@ export default function IncidentFocus({ runId, incidentId }: { runId: number; in
           display: formatScore(candidate.root_cause_score, 2),
           colour: candidate.rank === 1 ? 'var(--alert)' : 'var(--view-semantic)',
         }))} />
+      </div>
+
+      <div className="focus__section">
+        <h3>How this root cause was chosen</h3>
+        <RootCauseSteps incident={incident} />
       </div>
 
       <div className="focus__section">
