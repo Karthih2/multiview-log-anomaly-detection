@@ -1,12 +1,22 @@
 """Anomaly timeline, per-component risk, flagged events, evidence and templates."""
+import json
+import logging
+import threading
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import case, func, select
 
 from app.api.deps import CompletedRun, DbSession, Paging
+from app.core.config import get_settings
+from app.db import models
 from app.db.models import EvidencePackage, LogEvent, Template
+from app.db.session import new_session
 from app.schemas.common import Page
 from app.schemas.events import (AnomalyKind, ComponentRisk, EventDetail, EventOut, EvidenceOut,
                                 ScoreBucket, TemplateOut, TimeBucket, TimelinePoint)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/runs/{run_id}", tags=["events"])
 
@@ -38,27 +48,67 @@ def anomaly_timeline(run: CompletedRun, db: DbSession, bucket: TimeBucket = Time
     return sorted(points, key=lambda point: (point.date, point.severity))
 
 
-# A finished run never changes, so its slices are computed once per process.
+# A finished run never changes, so its slices are computed once per process, and
+# also kept on disk so a large run (the full BGL log) is not rescanned after a restart.
 _SCORE_CACHE: dict[tuple[int, int], list[ScoreBucket]] = {}
+# Runs at least this long are pre-computed at startup (see warm_score_cache).
+LARGE_RUN_ROWS = 1_000_000
+LANDING_POINTS = 120
+
+
+def _score_cache_file(run: models.PipelineRun, points: int) -> Path:
+    # created_at is part of the name so a reused run id never reads another run's slices.
+    stamp = run.created_at.strftime("%Y%m%d%H%M%S%f") if run.created_at else "0"
+    return get_settings().storage_dir / "cache" / f"run{run.id}_{stamp}_score{points}.json"
+
+
+def compute_score_timeline(db, run: models.PipelineRun, points: int) -> list[ScoreBucket]:
+    if (run.id, points) in _SCORE_CACHE:
+        return _SCORE_CACHE[run.id, points]
+    cache_file = _score_cache_file(run, points)
+    try:
+        buckets = [ScoreBucket.model_validate(item) for item in json.loads(cache_file.read_text("utf-8"))]
+    except (OSError, ValueError):
+        total = run.total_rows or 1
+        slot = (LogEvent.row_index * points // total).label("slot")
+        rows = db.execute(
+            select(slot, func.min(LogEvent.row_index), func.min(LogEvent.time), func.max(LogEvent.final_score),
+                   func.avg(LogEvent.threshold), func.sum(case((LogEvent.is_anomaly, 1), else_=0)))
+            .where(LogEvent.run_id == run.id).group_by(slot).order_by(slot)).all()
+        buckets = [ScoreBucket(row_start=start, time=time, max_score=top, mean_threshold=cut,
+                               n_anomalies=int(n or 0))
+                   for _, start, time, top, cut, n in rows]
+        try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            # Write then rename, so a reader never sees a half-written file.
+            partial = cache_file.with_name(f"{cache_file.name}.{threading.get_ident()}.tmp")
+            partial.write_text(json.dumps([b.model_dump(mode="json") for b in buckets]), "utf-8")
+            partial.replace(cache_file)
+        except OSError:
+            pass  # the in-memory copy still serves this process
+    _SCORE_CACHE[run.id, points] = buckets
+    return buckets
 
 
 @router.get("/score-timeline", response_model=list[ScoreBucket])
 def score_timeline(run: CompletedRun, db: DbSession, points: int = 120):
     """The log cut into equal slices by line order (lines are time-sorted): worst fused
     score, mean cutoff and flagged count per slice, for the headline score chart."""
-    points = max(10, min(points, 400))
-    if (run.id, points) in _SCORE_CACHE:
-        return _SCORE_CACHE[run.id, points]
-    total = run.total_rows or 1
-    slot = (LogEvent.row_index * points // total).label("slot")
-    rows = db.execute(
-        select(slot, func.min(LogEvent.row_index), func.min(LogEvent.time), func.max(LogEvent.final_score),
-               func.avg(LogEvent.threshold), func.sum(case((LogEvent.is_anomaly, 1), else_=0)))
-        .where(LogEvent.run_id == run.id).group_by(slot).order_by(slot)).all()
-    buckets = [ScoreBucket(row_start=start, time=time, max_score=top, mean_threshold=cut, n_anomalies=int(n or 0))
-               for _, start, time, top, cut, n in rows]
-    _SCORE_CACHE[run.id, points] = buckets
-    return buckets
+    return compute_score_timeline(db, run, max(10, min(points, 400)))
+
+
+def warm_score_cache() -> None:
+    """Prepare the landing-page chart of every large finished run (the full BGL log) in the
+    background at startup, so the first visitor does not wait for a scan of millions of rows."""
+    try:
+        with new_session() as db:
+            large = db.scalars(select(models.PipelineRun).where(
+                models.PipelineRun.status == models.RunStatus.COMPLETED.value,
+                models.PipelineRun.total_rows >= LARGE_RUN_ROWS)).all()
+            for run in large:
+                compute_score_timeline(db, run, LANDING_POINTS)
+    except Exception:  # a cold cache only costs speed, never correctness
+        logger.exception("could not pre-compute the score timeline")
 
 
 # Typical normal-line score per view, once per finished run.

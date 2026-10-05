@@ -1,4 +1,5 @@
 """FastAPI application entry point: ``uvicorn app.main:app`` from the backend folder."""
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +17,8 @@ async def lifespan(_app: FastAPI):
     configure_logging()
     init_db()
     fail_interrupted_runs()
+    # Build the full-log chart in the background; startup does not wait for it.
+    threading.Thread(target=events.warm_score_cache, name="warm-score-cache", daemon=True).start()
     yield
 
 
