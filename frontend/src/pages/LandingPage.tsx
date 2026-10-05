@@ -17,14 +17,18 @@ import { stageCopy, viewCopy, viewVar } from '../lib/vocabulary'
 import DecryptedText from '../reactbits/DecryptedText'
 import '../styles/landing.css'
 
-/** Past this many lines the headline queries take seconds, so a smaller run is preferred for the demo. */
-const DEMO_MAX_LINES = 200_000
+/** A run this long covers the whole BGL log (4.7M lines) rather than a 50,000-line sample. */
+const FULL_LOG_MIN_LINES = 1_000_000
 
-/** The run the page demonstrates with: the largest finished one that still loads quickly. */
+const isFullLog = (run: Run | null) => (run?.total_rows ?? 0) >= FULL_LOG_MIN_LINES
+
+/** The run the page demonstrates with: the full BGL run when there is one (newest first),
+ *  otherwise the largest finished run. */
 function pickFeatured(runs: Run[]): Run | null {
   const finished = runs.filter((run) => run.status === 'completed' && run.total_rows)
-  const quick = finished.filter((run) => (run.total_rows ?? 0) <= DEMO_MAX_LINES)
-  return (quick.length ? quick : finished).sort((a, b) => (b.total_rows ?? 0) - (a.total_rows ?? 0))[0] ?? null
+  const full = finished.filter(isFullLog)
+  const pool = full.length ? full : finished
+  return [...pool].sort((a, b) => (b.total_rows ?? 0) - (a.total_rows ?? 0) || b.id - a.id)[0] ?? null
 }
 
 interface PipeNode {
@@ -231,8 +235,9 @@ const LIMITS: [string, string][] = [
 ]
 
 export default function LandingPage() {
-  const runs = useApi<Page<Run>>('/runs')
+  const runs = useApi<Page<Run>>('/runs?limit=500')
   const featured = runs.data ? pickFeatured(runs.data.items) : null
+  const full = isFullLog(featured)
   const detail = useApi<RunDetail>(featured ? `/runs/${featured.id}` : null)
   const still = prefersReducedMotion()
 
@@ -289,7 +294,9 @@ export default function LandingPage() {
             </p>
             <p className="muted">
               {detail.data?.view_summary
-                ? `The figure on each stamp is that view's average weight in run No. ${serial(detail.data.id)}.`
+                ? full
+                  ? `The figure on each stamp is that view's average weight across all ${formatInt(detail.data.total_rows)} lines of the full BGL log.`
+                  : `The figure on each stamp is that view's average weight in run No. ${serial(detail.data.id)}.`
                 : 'Each view gets a weight per line. The three weights always add up to 100 percent.'}
             </p>
           </Reveal>
@@ -300,9 +307,20 @@ export default function LandingPage() {
       <section className="band" id="demo">
         <div className="page">
           <Reveal className="band__head">
-            <p className="caps">Live example</p>
-            <h2 className="display">A real run, in full</h2>
-            {featured ? (
+            <p className="caps">{full ? 'Full BGL log' : 'Live example'}</p>
+            <h2 className="display">{full ? 'The whole log, end to end' : 'A real run, in full'}</h2>
+            {featured && full ? (
+              <p className="lede">
+                All {formatInt(featured.total_rows)} lines of the BlueGene/L log
+                {featured.time_start && featured.time_end
+                  ? `, ${formatLogDate(featured.time_start)} to ${formatLogDate(featured.time_end)}`
+                  : ''}.
+                {' '}{formatInt(featured.n_anomalies)} lines
+                ({formatPercent((featured.n_anomalies ?? 0) / (featured.total_rows || 1))}) were flagged and
+                grouped into {formatInt(featured.n_incidents)} incidents. These are the stored results of
+                run No. {serial(featured.id)}, not a mock-up.
+              </p>
+            ) : featured ? (
               <p className="lede">
                 Run No. {serial(featured.id)} read {formatInt(featured.total_rows)} lines,
                 of which {formatPercent((featured.n_anomalies ?? 0) / (featured.total_rows || 1))} were

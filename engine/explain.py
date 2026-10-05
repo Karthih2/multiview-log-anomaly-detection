@@ -38,10 +38,12 @@ def structural_shap(iso, encoder, x_rows: np.ndarray, feature_frame_rows: pd.Dat
     line toward "more anomalous", the same direction as the structural score.
     One-hot columns are summed back into one "Component" and one "Type" entry.
     """
-    import shap  # lazy: slow import, only needed when a run builds evidence
-
     if len(x_rows) == 0:
         return []
+    try:
+        import shap  # lazy: slow import, only needed when a run builds evidence
+    except ImportError:  # e.g. numba DLL blocked by an Application Control policy
+        return [[] for _ in x_rows]  # run still finishes, just without structural SHAP
     values = -np.asarray(shap.TreeExplainer(iso).shap_values(x_rows))
     n_numeric = len(NUMERIC_COLUMNS)
     owner = list(NUMERIC_COLUMNS)
